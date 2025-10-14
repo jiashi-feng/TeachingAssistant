@@ -1,0 +1,50 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Django: runserver",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "runserver",
+                "8000"
+            ],
+            "django": true,
+            "justMyCode": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Django: makemigrations",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "makemigrations"
+            ],
+            "django": true,
+            "justMyCode": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Django: migrate",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "migrate"
+            ],
+            "django": true,
+            "justMyCode": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

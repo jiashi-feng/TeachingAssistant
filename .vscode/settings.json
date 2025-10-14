@@ -1,0 +1,56 @@
+{
+    // Python解释器配置 - 指向虚拟环境
+    "python.defaultInterpreterPath": "${workspaceFolder}/venv/Scripts/python.exe",
+    // 终端自动激活虚拟环境
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    // Python分析路径 - 让IDE正确识别Django模块
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/backend"
+    ],
+    // 编辑器配置
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.rulers": [
+        120
+    ],
+    // Python格式化
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    // 前端文件格式
+    "[javascript]": {
+        "editor.tabSize": 2
+    },
+    "[vue]": {
+        "editor.tabSize": 2
+    },
+    "[html]": {
+        "editor.tabSize": 2
+    },
+    // 文件排除 - 隐藏Python编译文件
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+    // 搜索排除 - 提高搜索性能
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/venv": true,
+        "**/__pycache__": true,
+        "**/staticfiles": true,
+        "**/media": true
+    },
+    // Django模板支持
+    "emmet.includeLanguages": {
+        "django-html": "html"
+    },
+    // 终端环境变量
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}/backend"
+    }
+}

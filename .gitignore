@@ -30,25 +30,55 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
-# 后端特定
-backend/media/
+# MySQL数据库备份
+*.sql
+*.dump
+*.mysql
+
+# Django迁移文件（可选：根据团队决定是否提交）
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# Django静态文件收集
+backend/static/
 backend/staticfiles/
 backend/static_root/
+
+# 后端媒体文件（用户上传）
+backend/media/
+
+# 后端其他
 backend/venv/
 backend/*.pyc
 
-# 环境变量
+# 环境变量和敏感配置
 .env
 .env.local
 .env.*.local
+*.secret
+secrets.py
+config/secrets.json
+
+# SSL证书和密钥
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
 
 # IDE
-.vscode/
+# VSCode用户特定配置（但保留settings.json和launch.json供团队共享）
+.vscode/*.code-workspace
+.vscode/.history/
+.vscode/sftp.json
+.vscode/tasks.json
+.vscode/extensions.json
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+Thumbs.db
 
 # 前端
 frontend/node_modules/

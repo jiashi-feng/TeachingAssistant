@@ -1,23 +1,26 @@
 # Django核心
-Django==3.2.20
-mysqlclient==2.1.1
+Django==4.2.7
+mysqlclient==2.2.0
 
 # Django REST Framework - 前后端分离必需
 djangorestframework==3.14.0
-djangorestframework-simplejwt==5.2.2
-django-cors-headers==4.0.0
-django-filter==23.2
+djangorestframework-simplejwt==5.3.0
+django-cors-headers==4.3.0
+django-filter==23.5
 
 # 图片处理
-Pillow==9.5.0
+Pillow==10.1.0
 
 # 工具库
 python-dateutil==2.8.2
 APScheduler==3.10.1
 
 # 开发工具（可选）
-django-debug-toolbar==4.1.0
+django-debug-toolbar==4.2.0
 
 # API文档生成（可选）
 drf-yasg==1.21.5
+
+# 环境变量管理
+python-dotenv==1.0.1
 

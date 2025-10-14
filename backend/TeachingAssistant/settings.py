@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from dotenv import load_dotenv
+
+# 加载环境变量 (.env 文件位于项目根目录)
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,22 +24,33 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '!@c4k@1*tx#405@24y324#&xym^r_r&i=z25c1r!jbs5w#!l5&'
+SECRET_KEY = os.getenv('SECRET_KEY', '!@c4k@1*tx#405@24y324#&xym^r_r&i=z25c1r!jbs5w#!l5&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    # Django内置应用
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # 第三方库
+    'rest_framework',                # Django REST Framework
+    'rest_framework_simplejwt',      # JWT认证
+    'corsheaders',                   # CORS跨域支持
+    'django_filters',                # API过滤
+    'drf_yasg',                      # API文档生成
+    
+    # 项目应用
     'accounts.apps.AccountsConfig',
     'application.apps.ApplicationConfig',
     'dashboard.apps.DashboardConfig',
@@ -46,6 +61,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',        # CORS中间件（必须在CommonMiddleware之前）
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,8 +97,16 @@ WSGI_APPLICATION = 'TeachingAssistant.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.mysql'),
+        'NAME': os.getenv('DB_NAME', 'teaching_assistant_db'),
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 
@@ -109,18 +133,153 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-hans'  # 中文简体
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'  # 上海时区（东八区）
 
-USE_I18N = True
+USE_I18N = True  # 启用国际化
 
-USE_L10N = True
+USE_L10N = True  # 启用本地化
 
-USE_TZ = True
+USE_TZ = True  # 启用时区支持
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # 静态文件收集目录（部署时使用）
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # 额外的静态文件目录
+]
+
+# Media files (用户上传的文件)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # 媒体文件存储目录
+
+
+# ==============================================================================
+# REST Framework 配置
+# ==============================================================================
+
+REST_FRAMEWORK = {
+    # 认证方式
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT认证
+        'rest_framework.authentication.SessionAuthentication',         # Session认证（开发调试用）
+    ),
+    
+    # 权限控制
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',  # 默认需要登录
+    ),
+    
+    # 分页设置
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,  # 每页显示10条
+    
+    # 过滤器
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',  # 过滤
+        'rest_framework.filters.SearchFilter',                # 搜索
+        'rest_framework.filters.OrderingFilter',              # 排序
+    ),
+    
+    # 日期时间格式
+    'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
+    
+    # 异常处理
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    
+    # 渲染器
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',  # 可浏览的API界面（开发时很有用）
+    ),
+}
+
+
+# ==============================================================================
+# JWT 配置
+# ==============================================================================
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),      # Access Token有效期：2小时
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),      # Refresh Token有效期：7天
+    'ROTATE_REFRESH_TOKENS': True,                    # 刷新时返回新的refresh token
+    'BLACKLIST_AFTER_ROTATION': True,                 # 旋转后将旧token加入黑名单
+    
+    'ALGORITHM': 'HS256',                             # 加密算法
+    'SIGNING_KEY': SECRET_KEY,                        # 签名密钥
+    'VERIFYING_KEY': None,
+    
+    'AUTH_HEADER_TYPES': ('Bearer',),                 # 认证头类型
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+}
+
+
+# ==============================================================================
+# CORS 配置（跨域资源共享）
+# ==============================================================================
+
+# 开发环境：允许所有来源（生产环境需要改为具体域名）
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # DEBUG为True时允许所有来源
+
+# 生产环境：指定允许的域名
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',      # Vue前端开发服务器
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',      # 备用端口
+    'http://127.0.0.1:3000',
+]
+
+# 允许携带Cookie
+CORS_ALLOW_CREDENTIALS = True
+
+# 允许的HTTP方法
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# 允许的请求头
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+
+# ==============================================================================
+# 文件上传配置
+# ==============================================================================
+
+# 文件上传大小限制（10MB）
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760
+
+# 允许的图片格式
+ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif']
+
+# 允许的文档格式（简历等）
+ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 
+                          'application/vnd.openxmlformats-officedocument.wordprocessingml.document']

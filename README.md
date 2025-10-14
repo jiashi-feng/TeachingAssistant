@@ -45,12 +45,12 @@
 
 ### 👥 用户角色
 
-| 角色 | 主要功能 |
-|------|---------|
-| **学生** | 浏览岗位、投递申请、查看申请状态 |
-| **助教** | 填写工时、查看薪酬记录 |
-| **教师** | 发布岗位、审核申请、审批工时、评价助教 |
-| **管理员** | 用户管理、数据统计、生成报表 |
+| 角色       | 主要功能                               |
+| ---------- | -------------------------------------- |
+| **学生**   | 浏览岗位、投递申请、查看申请状态       |
+| **助教**   | 填写工时、查看薪酬记录                 |
+| **教师**   | 发布岗位、审核申请、审批工时、评价助教 |
+| **管理员** | 用户管理、数据统计、生成报表           |
 
 ---
 
@@ -167,29 +167,42 @@ Django 3.2+                    # Web框架
 ```
 TeachingAssistant/
 │
+├── .env                               # 环境变量配置 ✅已配置
+├── .gitignore                         # Git忽略配置 ✅已配置
+├── .vscode/                           # VSCode/Cursor配置 ✅已配置
+│   ├── settings.json                  # 自动激活虚拟环境
+│   └── launch.json                    # 调试配置
+│
+├── venv/                              # Python虚拟环境 ✅已创建
+│
 ├── backend/                           # Django后端
 │   ├── accounts/                      # 用户认证模块
+│   │   ├── migrations/                # 数据库迁移文件
 │   │   ├── models.py                  # 自定义用户模型
 │   │   ├── views.py                   # 认证API
 │   │   ├── serializers.py             # 序列化器
 │   │   ├── permissions.py             # 权限控制
-│   │   └── urls.py                    # 路由配置
+│   │   ├── urls.py                    # 路由配置
+│   │   ├── admin.py                   # Admin后台配置
+│   │   └── tests.py                   # 单元测试
 │   │
-│   ├── recruitment/                   # 招募管理模块
-│   ├── application/                   # 申请流程模块
-│   ├── timesheet/                     # 工时管理模块
+│   ├── recruitment/                   # 招募管理模块（教师端）
+│   ├── application/                   # 申请流程模块（学生端）
+│   ├── timesheet/                     # 工时管理模块（助教端）
 │   ├── notifications/                 # 通知模块
-│   ├── dashboard/                     # 数据看板模块
+│   ├── dashboard/                     # 数据看板模块（管理员端）
 │   │
-│   ├── TeachingAssistant/             # Django配置
-│   │   ├── settings.py                # 核心配置文件
+│   ├── TeachingAssistant/             # Django项目配置
+│   │   ├── settings.py                # 核心配置文件 ✅已完成配置
 │   │   ├── urls.py                    # 主路由配置
 │   │   └── wsgi.py                    # WSGI配置
 │   │
-│   ├── media/                         # 用户上传文件
+│   ├── media/                         # 用户上传文件（头像、简历等）
 │   ├── static/                        # 静态文件
+│   ├── staticfiles/                   # 静态文件收集目录
+│   ├── templates/                     # 模板文件
 │   ├── manage.py                      # Django管理脚本
-│   ├── requirements.txt               # Python依赖
+│   ├── requirements.txt               # Python依赖 ✅已完成
 │   └── README.md                      # 后端说明
 │
 ├── frontend/                          # Vue前端（待创建）
@@ -199,19 +212,34 @@ TeachingAssistant/
 │   │   ├── layouts/                   # 布局组件
 │   │   ├── views/                     # 页面组件
 │   │   ├── router/                    # 路由配置
-│   │   ├── store/                     # 状态管理
+│   │   ├── store/                     # 状态管理（Pinia）
+│   │   ├── utils/                     # 工具函数
 │   │   └── main.js                    # 入口文件
-│   ├── package.json
+│   ├── public/                        # 公共资源
+│   ├── package.json                   # NPM依赖配置
+│   ├── vite.config.js                 # Vite构建配置
 │   └── README.md                      # 前端说明
 │
-├── docs/                              # 项目文档
+├── docs/                              # 项目文档（待完善）
 │   ├── api.md                         # API接口文档
 │   ├── database.md                    # 数据库设计
 │   └── deployment.md                  # 部署文档
 │
+├── Design.md                          # 系统设计文档
 ├── README.md                          # 项目主说明
-├── TODO.md                            # 开发任务清单
+├── TODO.md                            # 开发任务清单 ✅第一阶段已完成
 └── PROJECT_STRUCTURE.md               # 项目结构详解
+```
+
+### 📝 开发进度
+
+- ✅ **第一阶段：环境搭建与基础配置** (2025-10-14完成)
+  - Python 3.8.10 + MySQL 8.0.43 + Node.js v22.14.0
+  - Django 4.2.7 + REST Framework + JWT + CORS
+  - 虚拟环境、数据库、核心配置已全部完成
+- ⬜ **第二阶段：数据模型设计** (待开始)
+- ⬜ **第三阶段：认证与权限系统** (待开始)
+
 ---
 
 ## 🚀 快速开始
