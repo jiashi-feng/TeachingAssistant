@@ -111,6 +111,17 @@ DATABASES = {
 }
 
 
+# ==============================================================================
+# 自定义用户模型配置
+# ==============================================================================
+
+# 使用自定义用户模型（RBAC架构）
+AUTH_USER_MODEL = 'accounts.User'
+
+# 默认主键字段类型（Django 3.2+，消除 models.W042 警告）
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
@@ -141,7 +152,7 @@ USE_I18N = True  # 启用国际化
 
 USE_L10N = True  # 启用本地化
 
-USE_TZ = True  # 启用时区支持
+USE_TZ = False  # 禁用时区支持（使用本地时间）
 
 
 # Static files (CSS, JavaScript, Images)

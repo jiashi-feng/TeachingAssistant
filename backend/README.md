@@ -17,52 +17,55 @@
 
 ```
 backend/
-├── accounts/                # 用户认证模块
-│   ├── migrations/          # 数据库迁移文件
-│   ├── models.py           # 自定义用户模型
+├── accounts/                # 用户认证模块 ✅已完成
+│   ├── migrations/          # 数据库迁移文件 ✅8个模型
+│   ├── management/          # 自定义管理命令
+│   │   └── commands/
+│   │       └── init_basic_data.py  # 初始化角色权限 ✅
+│   ├── models.py           # RBAC用户模型（8个模型）✅
+│   ├── admin.py            # Admin后台配置（8个Admin类）✅
 │   ├── views.py            # 认证API视图
 │   ├── serializers.py      # 序列化器
 │   ├── permissions.py      # 权限控制
 │   ├── urls.py             # 路由配置
-│   ├── admin.py            # Admin后台配置
 │   ├── apps.py             # 应用配置
 │   └── tests.py            # 单元测试
 │
-├── recruitment/            # 招募管理模块（教师端）
-│   ├── migrations/
-│   ├── models.py           # Position岗位模型
+├── recruitment/            # 招募管理模块 ✅模型完成
+│   ├── migrations/         # ✅已迁移
+│   ├── models.py           # Position岗位模型 ✅
+│   ├── admin.py            # Admin后台配置 ✅
 │   ├── views.py            # 岗位管理API
 │   ├── serializers.py
 │   ├── urls.py
-│   ├── admin.py
 │   └── tests.py
 │
-├── application/            # 申请流程模块（学生端）
-│   ├── migrations/
-│   ├── models.py           # Application申请模型
+├── application/            # 申请流程模块 ✅模型完成
+│   ├── migrations/         # ✅已迁移
+│   ├── models.py           # Application申请模型 ✅
+│   ├── admin.py            # Admin后台配置 ✅
 │   ├── views.py            # 申请管理API
 │   ├── serializers.py
 │   ├── urls.py
-│   ├── admin.py
 │   └── tests.py
 │
-├── timesheet/              # 工时管理模块（助教端）
-│   ├── migrations/
-│   ├── models.py           # Timesheet/Salary模型
+├── timesheet/              # 工时管理模块 ✅模型完成
+│   ├── migrations/         # ✅已迁移
+│   ├── models.py           # Timesheet/Salary模型 ✅
+│   ├── admin.py            # Admin后台配置 ✅
 │   ├── views.py            # 工时管理API
 │   ├── serializers.py
 │   ├── urls.py
-│   ├── admin.py
 │   └── tests.py
 │
-├── notifications/          # 通知模块
-│   ├── migrations/
-│   ├── models.py           # Notification通知模型
+├── notifications/          # 通知模块 ✅模型完成
+│   ├── migrations/         # ✅已迁移
+│   ├── models.py           # Notification通知模型 ✅
+│   ├── admin.py            # Admin后台配置 ✅
 │   ├── views.py            # 通知API
 │   ├── serializers.py
 │   ├── signals.py          # 信号处理（自动通知）
 │   ├── urls.py
-│   ├── admin.py
 │   └── tests.py
 │
 ├── dashboard/              # 数据看板模块（管理员端）
@@ -95,14 +98,23 @@ backend/
 └── requirements.txt        # Python依赖 ✅已完成
 ```
 
-### ✅ 第一阶段完成状态
+### ✅ 开发进度
 
-- [x] 环境配置完成
-- [x] 虚拟环境已创建
-- [x] 所有依赖已安装
-- [x] MySQL数据库已配置
-- [x] Django settings.py核心配置已完成
-- [ ] 数据模型设计（进行中）
+- [x] **第一阶段：环境搭建** (2025-10-14完成)
+  - 环境配置完成
+  - 虚拟环境已创建
+  - 所有依赖已安装
+  - MySQL数据库已配置
+  - Django settings.py核心配置已完成
+
+- [x] **第二阶段：数据模型设计** (2025-10-15完成)
+  - RBAC权限架构（8个模型）
+  - 5个业务模块（13个数据表）
+  - Admin后台配置（13个Admin类）
+  - 数据库迁移完成
+  - 初始化数据导入完成
+
+- [ ] **第三阶段：认证与权限系统** (待开始)
 
 ---
 
@@ -157,6 +169,9 @@ python manage.py makemigrations
 
 # 执行迁移
 python manage.py migrate
+
+# 初始化基础数据（角色、权限）
+python manage.py init_basic_data
 
 # 创建超级用户
 python manage.py createsuperuser
@@ -265,56 +280,112 @@ class PositionListCreateView(generics.ListCreateAPIView):
 
 ---
 
-## 🗃️ 数据模型
+## 🗃️ 数据模型（RBAC架构）
 
-### User (自定义用户模型)
+### ✅ 用户认证模块（8个模型）
 
+#### User（核心用户表）
 ```python
 # accounts/models.py
-class User(AbstractUser):
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    student_id = models.CharField(max_length=20, unique=True)
-    phone = models.CharField(max_length=20)
-    department = models.CharField(max_length=100)
-    avatar = models.ImageField(upload_to='avatars/')
+class User(AbstractBaseUser, PermissionsMixin):
+    user_id = models.CharField(max_length=20, unique=True)  # 通用ID
+    username = models.CharField(max_length=150, unique=True)
+    email = models.EmailField(unique=True)
+    full_name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20, blank=True)
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 ```
 
-### Position (岗位模型)
+#### Role（角色表）
+```python
+class Role(models.Model):
+    role_name = models.CharField(max_length=50, unique=True)
+    role_code = models.CharField(max_length=20, unique=True)  # STUDENT/FACULTY/ADMIN
+    description = models.TextField(blank=True)
+```
 
+#### Permission（权限表）
+```python
+class Permission(models.Model):
+    permission_name = models.CharField(max_length=100, unique=True)
+    permission_code = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True)
+```
+
+#### UserRole + RolePermission（关联表）
+- UserRole: 用户-角色多对多关联
+- RolePermission: 角色-权限多对多关联
+
+#### Student / Faculty / Administrator（扩展信息表）
+- 一对一扩展User，存储角色特定信息
+
+### ✅ 业务功能模块（5个模型）
+
+#### Position（岗位模型）
 ```python
 # recruitment/models.py
 class Position(models.Model):
     title = models.CharField(max_length=200)
     course_name = models.CharField(max_length=200)
-    faculty = models.ForeignKey(User, on_delete=models.CASCADE)
+    posted_by = models.ForeignKey(User, on_delete=models.PROTECT)
     status = models.CharField(max_length=20)  # open/closed/filled
+    max_hires = models.IntegerField()
+    hourly_rate = models.DecimalField(max_digits=8, decimal_places=2)
     # ...
 ```
 
-### Application (申请模型)
-
+#### Application（申请模型）
 ```python
 # application/models.py
 class Application(models.Model):
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
     applicant = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=20)  # submitted/reviewing/accepted/rejected
-    resume = models.FileField(upload_to='resumes/')
+    resume = models.FileField(upload_to='resumes/', null=True, blank=True)
     # ...
+    
+    class Meta:
+        unique_together = ('position', 'applicant')  # 同一岗位不可重复申请
 ```
 
-### Timesheet (工时模型)
-
+#### Timesheet（工时模型）
 ```python
 # timesheet/models.py
 class Timesheet(models.Model):
-    ta = models.ForeignKey(User, on_delete=models.CASCADE)
-    position = models.ForeignKey(Position, on_delete=models.CASCADE)
+    ta_user = models.ForeignKey(User, on_delete=models.PROTECT)
+    position = models.ForeignKey(Position, on_delete=models.PROTECT)
     month = models.DateField()
     work_hours = models.DecimalField(max_digits=5, decimal_places=1)
     status = models.CharField(max_length=20)  # pending/approved/rejected
     # ...
 ```
+
+#### Salary（薪酬模型）
+```python
+class Salary(models.Model):
+    timesheet = models.OneToOneField(Timesheet, on_delete=models.CASCADE)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    generated_by = models.ForeignKey(User, on_delete=models.PROTECT)  # 管理员
+    generated_at = models.DateTimeField(auto_now_add=True)
+    # ...
+```
+
+#### Notification（通知模型）
+```python
+# notifications/models.py
+class Notification(models.Model):
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE)
+    notification_type = models.CharField(max_length=50)  # 25种类型
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    # ...
+```
+
+详细设计请参考：[DATABASE_DESIGN.md](../DATABASE_DESIGN.md)
 
 ---
 
@@ -344,6 +415,9 @@ python manage.py test
 
 # 收集静态文件
 python manage.py collectstatic
+
+# 初始化基础数据（角色、权限）
+python manage.py init_basic_data
 ```
 
 ---
@@ -425,10 +499,10 @@ CORS_ALLOWED_ORIGINS = [
 ## 📚 相关文档
 
 - [项目主文档](../README.md)
-- [开发任务清单](../TODO.md)
+- [数据库设计文档](../DATABASE_DESIGN.md) ✅
+- [系统设计文档](../Design.md) ✅
+- [开发任务清单](../TODO.md) ✅
 - [项目结构说明](../PROJECT_STRUCTURE.md)
-- [开发指南](../DEVELOPMENT.md)
-- [API文档](../docs/api.md)
 
 ---
 
@@ -448,7 +522,7 @@ CORS_ALLOWED_ORIGINS = [
 
 ---
 
-**最后更新**: 2025-10-14
+**最后更新**: 2025-10-15
 
 ---
 
