@@ -16,21 +16,43 @@ from django.utils import timezone
 class UserManager(BaseUserManager):
     """自定义用户管理器"""
     
-    def create_user(self, username, email, password=None, **extra_fields):
-        """创建普通用户"""
+    def create_user(self, username, email, password=None, user_id=None, **extra_fields):
+        """
+        创建普通用户
+        
+        Args:
+            username: 用户名（登录用）
+            email: 邮箱
+            password: 密码
+            user_id: 用户ID（主键），如 S2021001234
+            **extra_fields: 其他字段（如 real_name, phone等）
+        """
         if not username:
             raise ValueError('用户名不能为空')
         if not email:
             raise ValueError('邮箱不能为空')
+        if not user_id:
+            raise ValueError('用户ID不能为空')
         
         email = self.normalize_email(email)
-        user = self.model(username=username, email=email, **extra_fields)
+        
+        # 创建用户时必须传入user_id（主键）
+        user = self.model(
+            user_id=user_id,  # 主键必须在创建时就指定
+            username=username,
+            email=email,
+            **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, username, email, password=None, **extra_fields):
-        """创建超级用户"""
+    def create_superuser(self, username, email, password=None, user_id=None, **extra_fields):
+        """
+        创建超级用户
+        
+        注意：命令行创建超级用户时，user_id需要手动输入
+        """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -40,7 +62,24 @@ class UserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('超级用户必须设置 is_superuser=True')
         
-        return self.create_user(username, email, password, **extra_fields)
+        # 如果没有提供user_id，生成一个默认的管理员ID
+        if not user_id:
+            # 查找最大的管理员ID
+            import re
+            admin_users = self.filter(user_id__startswith='A').order_by('-user_id')
+            if admin_users.exists():
+                last_id = admin_users.first().user_id
+                # 提取数字部分并+1
+                match = re.search(r'A(\d+)', last_id)
+                if match:
+                    next_num = int(match.group(1)) + 1
+                    user_id = f'A{next_num:05d}'  # A00001, A00002...
+                else:
+                    user_id = 'A00001'
+            else:
+                user_id = 'A00001'
+        
+        return self.create_user(username, email, password, user_id=user_id, **extra_fields)
 
 
 # ==============================================================================

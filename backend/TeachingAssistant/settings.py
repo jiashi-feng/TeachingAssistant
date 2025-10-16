@@ -230,7 +230,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),                 # 认证头类型
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     
-    'USER_ID_FIELD': 'id',
+    'USER_ID_FIELD': 'user_id',                       # 使用user_id作为用户标识（匹配我们的User模型）
     'USER_ID_CLAIM': 'user_id',
     
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),

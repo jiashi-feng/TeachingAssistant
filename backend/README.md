@@ -22,12 +22,12 @@ backend/
 │   ├── management/          # 自定义管理命令
 │   │   └── commands/
 │   │       └── init_basic_data.py  # 初始化角色权限 ✅
-│   ├── models.py           # RBAC用户模型（8个模型）✅
+│   ├── models.py           # RBAC用户模型（8个模型，561行）✅
 │   ├── admin.py            # Admin后台配置（8个Admin类）✅
-│   ├── views.py            # 认证API视图
-│   ├── serializers.py      # 序列化器
-│   ├── permissions.py      # 权限控制
-│   ├── urls.py             # 路由配置
+│   ├── views.py            # 认证API视图（12个接口，324行）✅
+│   ├── serializers.py      # 序列化器（10个，430行）✅
+│   ├── permissions.py      # 权限控制（9个权限类，200行）✅
+│   ├── urls.py             # 路由配置（12个路由）✅
 │   ├── apps.py             # 应用配置
 │   └── tests.py            # 单元测试
 │
@@ -114,7 +114,15 @@ backend/
   - 数据库迁移完成
   - 初始化数据导入完成
 
-- [ ] **第三阶段：认证与权限系统** (待开始)
+- [x] **第三阶段：认证与权限系统** (2025-10-15完成)
+  - JWT Token认证配置（user_id主键支持）
+  - 用户认证API（12个接口）
+  - 权限控制系统（9个权限类）
+  - 序列化器系统（10个序列化器）
+  - URL路由配置（12个路由）
+  - 测试通过（注册、登录、Token验证）
+
+**当前进度：25.0% (14/56任务完成) | 里程碑M3已达成**
 
 ---
 
@@ -191,14 +199,28 @@ python manage.py runserver
 
 ## 📡 API路由
 
-### 认证相关 (`/api/auth/`)
+### 认证相关 (`/api/auth/`) ✅ 已实现
 
 ```
-POST   /api/auth/register/          # 用户注册
-POST   /api/auth/login/             # 用户登录
-POST   /api/auth/logout/            # 用户登出
-GET    /api/auth/profile/           # 获取用户信息
-PUT    /api/auth/change-password/   # 修改密码
+# JWT Token
+POST   /api/auth/token/              # 获取JWT Token（登录）
+POST   /api/auth/token/refresh/      # 刷新Token
+
+# 用户认证
+POST   /api/auth/register/           # 用户注册（学生/教师/管理员）
+POST   /api/auth/login/              # 用户登录
+POST   /api/auth/logout/             # 用户登出（Token黑名单）
+GET    /api/auth/profile/            # 获取当前用户信息
+PUT    /api/auth/profile/            # 更新用户信息
+PUT    /api/auth/change-password/    # 修改密码
+
+# 用户管理
+GET    /api/auth/users/              # 用户列表（支持搜索、筛选、分页）
+GET    /api/auth/users/{user_id}/    # 用户详情
+
+# 辅助接口
+GET    /api/auth/check-username/     # 检查用户名可用性
+GET    /api/auth/check-email/        # 检查邮箱可用性
 ```
 
 ### 学生端 (`/api/student/`)
@@ -570,4 +592,91 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 ✅ **国际化**
 - 语言：中文简体（zh-hans）
 - 时区：Asia/Shanghai（东八区）
+
+---
+
+## 🎉 第三阶段完成总结
+
+### ✅ 已实现功能
+
+#### 1. JWT认证系统
+- ✅ 配置SIMPLE_JWT，支持user_id作为主键
+- ✅ Access Token有效期2小时，Refresh Token有效期7天
+- ✅ Token刷新机制和黑名单功能
+- ✅ 自定义Token序列化器，嵌入用户角色和权限
+
+#### 2. 用户认证API（12个接口）
+- ✅ **注册接口**：支持学生/教师/管理员注册，自动创建扩展信息
+- ✅ **登录接口**：返回JWT Token + 用户完整信息 + 角色 + 权限列表
+- ✅ **登出接口**：Token黑名单机制，确保安全登出
+- ✅ **用户信息接口**：获取和更新当前用户资料
+- ✅ **修改密码接口**：旧密码验证 + 新密码强度检查
+- ✅ **用户列表接口**：支持搜索、筛选、分页
+- ✅ **辅助接口**：检查用户名和邮箱可用性
+
+#### 3. RBAC权限控制（9个权限类）
+- ✅ **IsStudent** - 学生权限
+- ✅ **IsTA** - 助教权限（检查Student.is_ta字段）
+- ✅ **IsFaculty** - 教师权限
+- ✅ **IsAdministrator** - 管理员权限
+- ✅ **IsStudentOrTA** - 学生或助教
+- ✅ **IsFacultyOrAdmin** - 教师或管理员
+- ✅ **IsOwner** - 对象所有者
+- ✅ **IsOwnerOrReadOnly** - 所有者可写，他人只读
+- ✅ **HasPermission** - 基于RBAC的动态权限检查
+
+#### 4. 序列化器系统（10个）
+- ✅ **UserSerializer** - 用户完整信息（含角色、权限、扩展信息）
+- ✅ **UserSimpleSerializer** - 用户简化信息（列表展示）
+- ✅ **RegisterSerializer** - 注册序列化器（支持三种角色）
+- ✅ **LoginSerializer** - 登录序列化器
+- ✅ **ChangePasswordSerializer** - 修改密码序列化器
+- ✅ **RoleSerializer** - 角色序列化器
+- ✅ **PermissionSerializer** - 权限序列化器
+- ✅ **StudentSerializer** - 学生信息序列化器
+- ✅ **FacultySerializer** - 教师信息序列化器
+- ✅ **AdministratorSerializer** - 管理员信息序列化器
+
+### 🔧 技术突破
+
+1. **CharField主键问题解决**
+   - 修改UserManager的create_user方法
+   - 支持user_id在创建时传入，避免主键为空错误
+   - 实现：`user = self.model(user_id=user_id, username=username, ...)`
+
+2. **密码安全标准**
+   - 使用PBKDF2-SHA256哈希算法
+   - 60万次迭代，符合OWASP标准
+   - 每个密码使用唯一随机盐值
+   - 单向加密，不可逆向解密
+
+3. **JWT无状态认证**
+   - 支持分布式部署和水平扩展
+   - Token中嵌入用户信息，减少数据库查询
+   - 黑名单机制确保登出安全
+
+4. **RBAC动态权限**
+   - 通过数据库查询实现权限检查
+   - 支持多角色和权限继承
+   - 灵活的权限分配和回收
+
+### 📊 代码统计
+
+| 文件                    | 行数      | 说明                         |
+| ----------------------- | --------- | ---------------------------- |
+| accounts/views.py       | 324       | 12个API视图                  |
+| accounts/serializers.py | 430       | 10个序列化器                 |
+| accounts/permissions.py | 200       | 9个权限类                    |
+| accounts/urls.py        | 58        | 12个路由                     |
+| accounts/models.py      | 561       | 8个模型（含UserManager优化） |
+| **总计**                | **1,573** | **第三阶段新增/修改代码**    |
+
+### 🎯 下一步计划
+
+开始 **第四阶段：核心业务API开发**
+- 实现岗位管理（recruitment）
+- 实现申请流程（application）
+- 实现工时管理（timesheet）
+- 实现通知系统（notifications）
+- 实现数据看板（dashboard）
 
