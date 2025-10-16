@@ -24,3 +24,6 @@ drf-yasg==1.21.5
 # 环境变量管理
 python-dotenv==1.0.1
 
+# Admin美化
+django-jazzmin==2.6.0
+

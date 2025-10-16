@@ -3,6 +3,8 @@
 """
 
 from django.contrib import admin
+from django.utils.html import format_html
+from django.utils import timezone
 from .models import Timesheet, Salary
 
 
@@ -12,7 +14,7 @@ class TimesheetAdmin(admin.ModelAdmin):
     
     list_display = [
         'timesheet_id', 'get_ta_name', 'get_position_title',
-        'month', 'hours_worked', 'status',
+        'month', 'hours_worked', 'status_colored',
         'submitted_at', 'reviewed_by'
     ]
     list_filter = ['status', 'month', 'submitted_at', 'reviewed_at']
@@ -22,6 +24,9 @@ class TimesheetAdmin(admin.ModelAdmin):
     ]
     ordering = ['-month', '-submitted_at']
     date_hierarchy = 'month'
+    
+    # 批量操作
+    actions = ['batch_approve', 'batch_reject']
     
     fieldsets = (
         ('工时信息', {
@@ -43,6 +48,42 @@ class TimesheetAdmin(admin.ModelAdmin):
         return obj.position.title
     get_position_title.short_description = '岗位'
     get_position_title.admin_order_field = 'position__title'
+    
+    def status_colored(self, obj):
+        """彩色状态标签"""
+        status_colors = {
+            'pending': ('#e6a23c', '待审核'),
+            'approved': ('#67c23a', '已批准'),
+            'rejected': ('#f56c6c', '已驳回'),
+        }
+        color, label = status_colors.get(obj.status, ('#909399', obj.get_status_display()))
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 4px 12px; '
+            'border-radius: 12px; font-size: 12px; font-weight: 500;">{}</span>',
+            color, label
+        )
+    status_colored.short_description = '状态'
+    status_colored.admin_order_field = 'status'
+    
+    def batch_approve(self, request, queryset):
+        """批量批准工时"""
+        updated = queryset.update(
+            status='approved',
+            reviewed_by=request.user,
+            reviewed_at=timezone.now()
+        )
+        self.message_user(request, f'成功批准 {updated} 个工时表')
+    batch_approve.short_description = '✓ 批量批准选中的工时'
+    
+    def batch_reject(self, request, queryset):
+        """批量驳回工时"""
+        updated = queryset.update(
+            status='rejected',
+            reviewed_by=request.user,
+            reviewed_at=timezone.now()
+        )
+        self.message_user(request, f'成功驳回 {updated} 个工时表')
+    batch_reject.short_description = '✗ 批量驳回选中的工时'
     
     def get_readonly_fields(self, request, obj=None):
         """编辑时，部分字段只读"""

@@ -68,13 +68,15 @@ backend/
 │   ├── urls.py
 │   └── tests.py
 │
-├── dashboard/              # 数据看板模块（管理员端）
+├── dashboard/              # 数据看板模块（管理员端）✅部分完成
 │   ├── migrations/
 │   ├── models.py
+│   ├── admin.py            # 自定义Admin站点 ✅
+│   ├── admin_views.py      # Admin统计数据视图 ✅
+│   ├── context_processors.py
 │   ├── views.py            # 统计数据API
 │   ├── serializers.py
 │   ├── urls.py
-│   ├── admin.py
 │   └── tests.py
 │
 ├── TeachingAssistant/      # Django项目配置
@@ -93,7 +95,9 @@ backend/
 │
 ├── static/                 # 开发环境静态文件
 ├── staticfiles/            # 生产环境静态文件收集目录
-├── templates/              # 模板文件（如果需要）
+├── templates/              # 模板文件
+│   └── admin/              # Django Admin自定义模板 ✅
+│       └── index.html      # 优化的Admin首页 ✅
 ├── manage.py               # Django管理脚本
 └── requirements.txt        # Python依赖 ✅已完成
 ```
@@ -122,7 +126,14 @@ backend/
   - URL路由配置（12个路由）
   - 测试通过（注册、登录、Token验证）
 
-**当前进度：25.0% (14/56任务完成) | 里程碑M3已达成**
+- [x] **第四阶段（部分）：管理员端开发** (2025-10-16完成)
+  - Django Admin后台优化（统计看板、UI/UX优化）
+  - 自定义AdminSite（实时数据统计）
+  - 优化Admin首页模板（5个统计卡片）
+  - 快捷操作按钮优化（创建用户、岗位、审核申请）
+  - 用户管理功能（13个模型的Admin配置）
+
+**当前进度：46.4% (26/56任务完成) | 里程碑M3已达成 + 管理后台完成**
 
 ---
 
@@ -192,8 +203,8 @@ python manage.py runserver
 ```
 
 访问：
-- **API接口**: http://localhost:8000/api/
-- **管理后台**: http://localhost:8000/admin/
+- **API接口**: http://localhost:8000/api/ ✅可用
+- **管理后台**: http://localhost:8000/admin/ ✅可用（已优化）
 
 ---
 
@@ -256,8 +267,21 @@ GET    /api/ta/salaries/            # 薪酬记录
 GET    /api/ta/dashboard/           # 助教看板
 ```
 
-### 管理员端 (`/api/admin/`)
+### 管理员端
 
+#### Django Admin后台 ✅ 已完成优化
+```
+http://localhost:8000/admin/           # Django Admin管理后台
+
+功能：
+- 优化的统计看板（用户、岗位、申请、薪酬统计）
+- 用户管理（创建、编辑、删除）
+- 13个模型的完整CRUD操作
+- 快捷操作按钮
+- 实时数据统计
+```
+
+#### RESTful API (`/api/admin/`)
 ```
 GET    /api/admin/users/                # 用户列表
 POST   /api/admin/users/                # 创建用户
@@ -440,6 +464,9 @@ python manage.py collectstatic
 
 # 初始化基础数据（角色、权限）
 python manage.py init_basic_data
+
+# 创建测试数据（可选）
+python manage.py create_test_data
 ```
 
 ---
@@ -544,7 +571,7 @@ CORS_ALLOWED_ORIGINS = [
 
 ---
 
-**最后更新**: 2025-10-15
+**最后更新**: 2025-10-16
 
 ---
 
@@ -673,10 +700,53 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 
 ### 🎯 下一步计划
 
-开始 **第四阶段：核心业务API开发**
-- 实现岗位管理（recruitment）
-- 实现申请流程（application）
-- 实现工时管理（timesheet）
-- 实现通知系统（notifications）
-- 实现数据看板（dashboard）
+继续 **第四阶段：核心业务API开发**
+- 实现岗位管理（recruitment/views.py）
+- 实现申请流程（application/views.py）
+- 实现工时管理（timesheet/views.py）
+- 实现通知系统（notifications/views.py）
+
+---
+
+## 📝 管理后台优化总结 (2025-10-16)
+
+### ✅ 已完成的优化
+
+#### 1. Django Admin首页自定义
+**文件**: `backend/templates/admin/index.html`
+- ✅ 5个统计卡片：用户总数、岗位总数、申请总数、待审核申请、本月薪酬
+- ✅ 优化布局：Grid网格布局，响应式设计
+- ✅ 修复嵌套标签问题：移除多余的stat-icon嵌套
+- ✅ 配色方案：蓝色（用户）、绿色（岗位）、橙色（申请）、红色（待审核）、紫色（薪酬）
+- ✅ 快捷操作按钮：创建用户、创建岗位、审核申请
+- ✅ 按钮样式优化：字体加粗、增大字号、阴影效果、悬停动画
+
+#### 2. 自定义Admin站点
+**文件**: `backend/dashboard/admin_views.py`
+- ✅ 创建CustomAdminSite类，重写index方法
+- ✅ 实时统计数据注入context
+- ✅ 统计逻辑：
+  - 用户总数（User.objects.count()）
+  - 岗位总数（Position.objects.count()）
+  - 申请总数（Application.objects.count()）
+  - 待审核申请（status='pending'）
+  - 本月薪酬（当月Salary汇总）
+
+#### 3. UI/UX优化
+- ✅ 统计卡片：悬停效果（上移+阴影加深）
+- ✅ 快捷按钮：增强文字可见度（font-weight: 600, font-size: 15px）
+- ✅ 布局间距：卡片间距20px，按钮间距15px
+- ✅ 响应式设计：自动适应不同屏幕尺寸
+
+
+**优化前**：
+- ❌ 统计卡片布局混乱（嵌套标签错误）
+- ❌ 按钮文字不清晰（字体小、无阴影）
+- ❌ 缺少视觉反馈（无悬停效果）
+
+**优化后**：
+- ✅ 清晰的网格布局（响应式）
+- ✅ 醒目的按钮文字（加粗、增大、阴影）
+- ✅ 流畅的交互体验（悬停动画）
+- ✅ 实时数据统计（自动更新）
 

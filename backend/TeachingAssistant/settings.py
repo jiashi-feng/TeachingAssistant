@@ -35,6 +35,9 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 # Application definition
 
 INSTALLED_APPS = [
+    # Admin美化（必须在django.contrib.admin之前）
+    'jazzmin',
+    
     # Django内置应用
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,20 +51,19 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',      # JWT认证
     'corsheaders',                   # CORS跨域支持
     'django_filters',                # API过滤
-    'drf_yasg',                      # API文档生成
     
     # 项目应用
-    'accounts.apps.AccountsConfig',
-    'application.apps.ApplicationConfig',
-    'dashboard.apps.DashboardConfig',
-    'notifications.apps.NotificationsConfig',
-    'recruitment.apps.RecruitmentConfig',
-    'timesheet.apps.TimesheetConfig',
+    'accounts',                      # 用户认证模块
+    'recruitment',                   # 招募管理模块
+    'application',                   # 申请流程模块
+    'timesheet',                     # 工时管理模块
+    'notifications',                 # 通知模块
+    'dashboard',                     # 数据看板模块
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # CORS中间件（必须在最前面）
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',        # CORS中间件（必须在CommonMiddleware之前）
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -75,8 +77,7 @@ ROOT_URLCONF = 'TeachingAssistant.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
-        ,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -84,6 +85,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'dashboard.context_processors.admin_stats',  # Admin统计数据
             ],
         },
     },
@@ -97,29 +99,18 @@ WSGI_APPLICATION = 'TeachingAssistant.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.mysql'),
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('DB_NAME', 'teaching_assistant_db'),
-        'USER': os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'USER': os.getenv('DB_USER', 'ta_admin'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'your_password_here'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        }
     }
 }
-
-
-# ==============================================================================
-# 自定义用户模型配置
-# ==============================================================================
-
-# 使用自定义用户模型（RBAC架构）
-AUTH_USER_MODEL = 'accounts.User'
-
-# 默认主键字段类型（Django 3.2+，消除 models.W042 警告）
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Password validation
@@ -131,6 +122,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -146,91 +140,94 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'zh-hans'  # 中文简体
 
-TIME_ZONE = 'Asia/Shanghai'  # 上海时区（东八区）
+TIME_ZONE = 'Asia/Shanghai'  # 上海时区
 
-USE_I18N = True  # 启用国际化
+USE_I18N = True
 
-USE_L10N = True  # 启用本地化
+USE_L10N = True
 
-USE_TZ = False  # 禁用时区支持（使用本地时间）
+USE_TZ = False  # 关闭时区支持，避免MySQL时区问题
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # 静态文件收集目录（部署时使用）
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # 额外的静态文件目录
+    os.path.join(BASE_DIR, 'static'),
 ]
 
-# Media files (用户上传的文件)
+# Media files (User uploads)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # 媒体文件存储目录
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 # ==============================================================================
-# REST Framework 配置
+# 自定义用户模型
+# ==============================================================================
+
+AUTH_USER_MODEL = 'accounts.User'
+
+# 设置默认主键字段类型
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ==============================================================================
+# Django REST Framework 配置
 # ==============================================================================
 
 REST_FRAMEWORK = {
-    # 认证方式
+    # 默认认证类
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT认证
-        'rest_framework.authentication.SessionAuthentication',         # Session认证（开发调试用）
+        'rest_framework.authentication.SessionAuthentication',        # Session认证（用于调试）
     ),
     
-    # 权限控制
+    # 默认权限类
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',  # 默认需要登录
+        'rest_framework.permissions.IsAuthenticated',  # 默认需要认证
     ),
     
-    # 分页设置
+    # 分页配置
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # 每页显示10条
+    'PAGE_SIZE': 20,
     
-    # 过滤器
+    # 过滤后端
     'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',  # 过滤
-        'rest_framework.filters.SearchFilter',                # 搜索
-        'rest_framework.filters.OrderingFilter',              # 排序
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
     ),
     
     # 日期时间格式
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
+    'DATE_FORMAT': '%Y-%m-%d',
+    'TIME_FORMAT': '%H:%M:%S',
     
     # 异常处理
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
-    
-    # 渲染器
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',  # 可浏览的API界面（开发时很有用）
-    ),
 }
 
 
 # ==============================================================================
-# JWT 配置
+# JWT配置
 # ==============================================================================
 
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),      # Access Token有效期：2小时
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),      # Refresh Token有效期：7天
-    'ROTATE_REFRESH_TOKENS': True,                    # 刷新时返回新的refresh token
-    'BLACKLIST_AFTER_ROTATION': True,                 # 旋转后将旧token加入黑名单
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),     # Access Token有效期：2小时
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     # Refresh Token有效期：7天
+    'ROTATE_REFRESH_TOKENS': True,                   # 刷新token时生成新的refresh token
+    'BLACKLIST_AFTER_ROTATION': True,                # 旧的refresh token加入黑名单
     
-    'ALGORITHM': 'HS256',                             # 加密算法
-    'SIGNING_KEY': SECRET_KEY,                        # 签名密钥
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
     
-    'AUTH_HEADER_TYPES': ('Bearer',),                 # 认证头类型
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-    
-    'USER_ID_FIELD': 'user_id',                       # 使用user_id作为用户标识（匹配我们的User模型）
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'user_id',                      # 使用user_id作为用户标识
     'USER_ID_CLAIM': 'user_id',
     
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
@@ -239,32 +236,19 @@ SIMPLE_JWT = {
 
 
 # ==============================================================================
-# CORS 配置（跨域资源共享）
+# CORS跨域配置
 # ==============================================================================
 
-# 开发环境：允许所有来源（生产环境需要改为具体域名）
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # DEBUG为True时允许所有来源
-
-# 生产环境：指定允许的域名
+# 允许的源（开发环境）
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',      # Vue前端开发服务器
+    'http://localhost:5173',     # Vite默认端口
+    'http://localhost:8080',     # Vue CLI默认端口
     'http://127.0.0.1:5173',
-    'http://localhost:3000',      # 备用端口
-    'http://127.0.0.1:3000',
+    'http://127.0.0.1:8080',
 ]
 
-# 允许携带Cookie
-CORS_ALLOW_CREDENTIALS = True
-
-# 允许的HTTP方法
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
+# CORS相关配置
+CORS_ALLOW_CREDENTIALS = True  # 允许携带Cookie
 
 # 允许的请求头
 CORS_ALLOW_HEADERS = [
@@ -294,3 +278,140 @@ ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif']
 # 允许的文档格式（简历等）
 ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 
                           'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+
+
+# ==============================================================================
+# Jazzmin Admin配置
+# ==============================================================================
+
+JAZZMIN_SETTINGS = {
+    # 站点标题
+    "site_title": "助教管理平台",
+    "site_header": "学生助教管理系统",
+    "site_brand": "助教管理平台",
+    
+    # 欢迎信息
+    "welcome_sign": "欢迎来到助教管理平台",
+    
+    # Copyright
+    "copyright": "助教管理平台",
+    
+    # 搜索模型（在顶部搜索框中可搜索的模型）
+    "search_model": ["accounts.User", "recruitment.Position", "application.Application"],
+    
+    # 用户头像字段
+    "user_avatar": "avatar",
+    
+    # 顶部链接
+    "topmenu_links": [
+        {"name": "首页", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "查看前端网站", "url": "http://localhost:5173", "new_window": True},
+        {"model": "accounts.User"},
+    ],
+    
+    # 侧边栏是否显示搜索框
+    "show_sidebar": True,
+    
+    # 导航扩展
+    "navigation_expanded": True,
+    
+    # 隐藏不需要的应用
+    "hide_apps": [],
+    
+    # 隐藏不需要的模型
+    "hide_models": [],
+    
+    # 菜单顺序
+    "order_with_respect_to": [
+        "accounts",
+        "recruitment",
+        "application",
+        "timesheet",
+        "notifications",
+    ],
+    
+    # 自定义应用和模型图标（Font Awesome）
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        
+        "accounts": "fas fa-user-shield",
+        "accounts.User": "fas fa-user",
+        "accounts.Role": "fas fa-user-tag",
+        "accounts.Permission": "fas fa-key",
+        "accounts.UserRole": "fas fa-user-check",
+        "accounts.RolePermission": "fas fa-link",
+        "accounts.Student": "fas fa-user-graduate",
+        "accounts.Faculty": "fas fa-chalkboard-teacher",
+        "accounts.Administrator": "fas fa-user-tie",
+        
+        "recruitment": "fas fa-briefcase",
+        "recruitment.Position": "fas fa-briefcase",
+        
+        "application": "fas fa-file-alt",
+        "application.Application": "fas fa-file-signature",
+        
+        "timesheet": "fas fa-clock",
+        "timesheet.Timesheet": "fas fa-clock",
+        "timesheet.Salary": "fas fa-money-bill-wave",
+        
+        "notifications": "fas fa-bell",
+        "notifications.Notification": "fas fa-envelope",
+    },
+    
+    # 默认图标（未指定的模型使用）
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    
+    # 相关模态框
+    "related_modal_active": False,
+    
+    # 自定义CSS
+    "custom_css": None,
+    
+    # 自定义JS
+    "custom_js": None,
+    
+    # 显示UI构建器
+    "show_ui_builder": False,
+    
+    # 更改表单模板
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs"
+    },
+}
+
+# Jazzmin UI调整配置
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-primary",
+    "accent": "accent-primary",
+    "navbar": "navbar-white navbar-light",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": False,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_flat_style": True,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
+}

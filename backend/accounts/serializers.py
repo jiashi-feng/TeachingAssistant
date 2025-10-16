@@ -83,7 +83,7 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['user_id', 'date_joined', 'last_login', 'created_at']
     
     def get_roles(self, obj):
-        """获取用户的所有角色"""
+        """获取用户的所有角色（完整对象数组）"""
         user_roles = UserRole.objects.filter(user=obj).select_related('role')
         return [
             {
