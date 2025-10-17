@@ -172,6 +172,9 @@ AUTH_USER_MODEL = 'accounts.User'
 # 设置默认主键字段类型
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Django Admin登录/登出重定向
+LOGOUT_REDIRECT_URL = '/logout-cleanup/'
+
 
 # ==============================================================================
 # Django REST Framework 配置
@@ -305,10 +308,9 @@ JAZZMIN_SETTINGS = {
     # 顶部链接
     "topmenu_links": [
         {"name": "首页", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "查看前端网站", "url": "http://localhost:5173", "new_window": True},
         {"model": "accounts.User"},
+         {"name": "退出登录", "url": "admin:logout", "icon": "fas fa-sign-out-alt"},
     ],
-    
     # 侧边栏是否显示搜索框
     "show_sidebar": True,
     

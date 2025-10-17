@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>退出登录</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .message-box {
+            background: white;
+            padding: 50px 60px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        p {
+            color: #666;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        #redirect {
+            color: #999;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="message-box">
+        <div class="success-icon">✓</div>
+        <h2>退出登录成功</h2>
+        <p>感谢使用学生助教管理平台</p>
+        <p id="redirect">正在跳转到登录页面<span class="spinner"></span></p>
+    </div>
+    
+    <script>
+        // 清除前端localStorage中的所有认证信息
+        try {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_info');
+            
+            // 清除sessionStorage（如果有使用）
+            sessionStorage.clear();
+            
+            console.log('✓ 已清除所有认证信息');
+        } catch (e) {
+            console.error('清除存储时出错:', e);
+        }
+        
+        // 1.5秒后跳转到前端登录页
+        setTimeout(function() {
+            window.location.href = 'http://localhost:5173/login?logout=true';
+        }, 1500);
+    </script>
+</body>
+</html>
+

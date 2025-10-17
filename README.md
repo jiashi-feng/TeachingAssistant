@@ -604,9 +604,7 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:8080"]
 ## 👨‍💻 作者
 
 **Teaching Assistant Team**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
-
+- GitHub:(https://github.com/jiashi-feng)
 ---
 
 ## 🙏 致谢
@@ -620,7 +618,4 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:8080"]
 <div align="center">
 
 **⭐ 如果这个项目对你有帮助，请给个Star支持一下！**
-
-Made with ❤️ by [Your Name]
-
 </div>

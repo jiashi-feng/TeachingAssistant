@@ -15,12 +15,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
 
 urlpatterns = [
     # ==============================================================================
     # Django管理后台
     # ==============================================================================
     path('admin/', admin.site.urls),
+    
+    # 退出登录清理页面
+    path('logout-cleanup/', TemplateView.as_view(template_name='logout_cleanup.html'), name='logout_cleanup'),
     
     # ==============================================================================
     # API接口

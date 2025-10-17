@@ -172,6 +172,17 @@ const goToRegister = () => {
  * 组件挂载时执行
  */
 onMounted(() => {
+
+  // 检查是否是从后台logout跳转过来的
+  if (route.query.logout === 'true') {
+    // 清除所有认证信息
+    userStore.clearAuth()
+    ElMessage.success('已退出登录')
+    // 清除URL参数
+    router.replace('/login')
+    return
+  }
+  
   // 如果已经登录，直接跳转到首页
   if (userStore.isAuthenticated) {
     userStore.navigateToHome()
@@ -193,11 +204,32 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
   padding: 20px;
+  
+  /* 背景图片 */
+  background-image: url('@/assets/styles/login-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* 半透明遮罩层，让登录框更清晰 */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(102, 126, 234, 0.3);
+  z-index: 0;
 }
 
 .login-box {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 420px;
   background: white;

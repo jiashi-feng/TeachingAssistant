@@ -632,11 +632,32 @@ const goToLogin = () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
   padding: 40px 20px;
+  
+  /* 背景图片 */
+  background-image: url('@/assets/styles/login-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* 半透明遮罩层，让注册框更清晰 */
+.register-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(102, 126, 234, 0.3);
+  z-index: 0;
 }
 
 .register-box {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 600px;
   background: white;
