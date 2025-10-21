@@ -75,7 +75,7 @@
         <el-form-item label="邮箱" prop="email">
           <el-input
             v-model="registerForm.email"
-            placeholder="请输入邮箱地址"
+            placeholder="如：example@qq.com 或 user@gmail.com"
             clearable
             @blur="checkEmailAvailable"
           >
@@ -94,6 +94,9 @@
               </el-icon>
             </template>
           </el-input>
+          <span class="form-tip">
+            支持QQ、Gmail、163、126等常见邮箱
+          </span>
         </el-form-item>
 
         <el-form-item label="密码" prop="password">
@@ -412,7 +415,12 @@ const registerRules = computed(() => {
     ],
     email: [
       { required: true, message: '请输入邮箱', trigger: 'blur' },
-      { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' },
+      {
+        // 更宽松的邮箱验证：支持数字开头、下划线、点等
+        pattern: /^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/,
+        message: '请输入正确的邮箱格式（如：259344789@qq.com）',
+        trigger: 'blur',
+      },
     ],
     password: [
       { required: true, message: '请输入密码', trigger: 'blur' },
