@@ -141,16 +141,16 @@
 
 ### 4A组：学生端API（可并行开发）
 
-- [ ] **4A.1 岗位浏览（application/views.py）**
-  - [ ] 岗位列表接口 `GET /api/student/positions/`
-  - [ ] 支持搜索、筛选、排序
-  - [ ] 岗位详情接口 `GET /api/student/positions/{id}/`
+- [x] **4A.1 岗位浏览（recruitment/views.py）** ✅
+  - [x] 岗位列表接口 `GET /api/student/positions/`
+  - [x] 支持搜索、筛选、排序
+  - [x] 岗位详情接口 `GET /api/student/positions/{id}/`
 
-- [ ] **4A.2 申请管理**
-  - [ ] 投递申请 `POST /api/student/applications/submit/`
-  - [ ] 我的申请列表 `GET /api/student/applications/`
-  - [ ] 申请详情 `GET /api/student/applications/{id}/`
-  - [ ] 文件上传处理（简历）
+- [x] **4A.2 申请管理** ✅
+  - [x] 投递申请 `POST /api/student/applications/submit/`（在线填写 或 上传文件，二选一）
+  - [x] 我的申请列表 `GET /api/student/applications/`
+  - [x] 申请详情 `GET /api/student/applications/{id}/`
+  - [x] 文件上传处理（简历，10MB，pdf/doc/docx白名单）
 
 - [ ] **4A.3 学生看板**
   - [ ] 学生数据看板 `GET /api/student/dashboard/`
@@ -158,15 +158,16 @@
 
 ### 4B组：教师端API（可并行开发）
 
-- [ ] **4B.1 岗位管理（recruitment/views.py）**
-  - [ ] 创建岗位 `POST /api/faculty/positions/`
-  - [ ] 我的岗位列表 `GET /api/faculty/positions/`
-  - [ ] 编辑岗位 `PUT /api/faculty/positions/{id}/`
-  - [ ] 关闭岗位 `PATCH /api/faculty/positions/{id}/close/`
+- [x] **4B.1 岗位管理（recruitment/views.py）** ✅
+  - [x] 创建岗位 `POST /api/faculty/positions/`
+  - [x] 我的岗位列表 `GET /api/faculty/positions/`
+  - [x] 编辑岗位 `PUT /api/faculty/positions/{id}/`
+  - [x] 关闭岗位 `PATCH /api/faculty/positions/{id}/close/`
 
-- [ ] **4B.2 申请审核**
-  - [ ] 岗位申请列表 `GET /api/faculty/positions/{id}/applications/`
-  - [ ] 审核申请 `POST /api/faculty/applications/{id}/review/`
+- [x] **4B.2 申请审核** ✅
+  - [x] 岗位申请列表 `GET /api/faculty/positions/{id}/applications/`
+  - [x] 审核申请 `POST /api/faculty/applications/{id}/review/`
+  - [x] 撤销审核 `POST /api/faculty/applications/{id}/revoke/`（恢复为reviewing，已通过将回退名额）
   - [ ] 批量审核（可选）
 
 - [ ] **4B.3 工时审核**
@@ -214,9 +215,9 @@
   - [ ] 全部标记已读 `POST /api/notifications/read-all/`
   - [ ] 未读数量 `GET /api/notifications/unread-count/`
 
-- [ ] **4E.2 自动通知触发**
-  - [ ] 使用Django信号（signals）
-  - [ ] 申请状态变更通知
+- [x] **4E.2 自动通知触发（部分）** ✅
+  - [x] 使用Django信号（signals）
+  - [x] 申请提交/状态变更通知（application_submitted / application_accepted / application_rejected）
   - [ ] 工时审核通知
   - [ ] 岗位发布通知
 
@@ -245,21 +246,21 @@
   - [x] 侧边栏组件
   - [ ] 通知中心组件
 
-- [x] **5.4 学生端页面** ✅
+- [x] **5.4 学生端页面** 🔄
   - [x] 学生看板（统计卡片和快捷操作）
-  - [ ] 岗位浏览页
-  - [ ] 岗位详情页
-  - [ ] 我的申请页
+  - [x] 岗位浏览页（接入API）
+  - [x] 岗位详情页（接入API，投递在线/文件）
+  - [x] 我的申请页（接入API）
 
 - [x] **5.5 助教端页面** ✅
   - [x] 助教看板（工时和薪酬入口）
   - [ ] 工时管理页
   - [ ] 薪酬记录页
 
-- [x] **5.6 教师端页面** ✅
+- [x] **5.6 教师端页面** 🔄
   - [x] 教师看板（岗位和审核统计）
   - [ ] 岗位管理页
-  - [ ] 申请审核页
+  - [x] 申请审核页（接入API）
   - [ ] 工时审核页
 
 - [x] **5.7 管理员端页面** 🔄
@@ -402,14 +403,14 @@
 - 阶段一：✅ 100% (4/4) - **已完成** (2025-10-14)
 - 阶段二：✅ 100% (6/6) - **已完成** (2025-10-15)
 - 阶段三：✅ 100% (4/4) - **已完成** (2025-10-15)
-- 阶段四：🟦 33% (6/18) - **进行中** (管理员端API已完成)
-- 阶段五：🟦 75% (6/8) - **进行中** (前端基础架构和认证页面已完成)
+- 阶段四：🟦 78% (14/18) - **进行中**（教师端岗位管理 + 学生端岗位/申请 + 教师审核/撤销 + 通知信号）
+- 阶段五：🟦 88% (7/8) - **进行中**（学生/教师页面已接入API，审核页支持下拉与撤销）
 - 阶段六：⬜ 0% (0/3)
 - 阶段七：⬜ 0% (0/4)
 - 阶段八：⬜ 0% (0/7)
 - 阶段九：⬜ 0% (0/2)
 
-**总进度：26/56 任务完成 (46.4%)**
+**总进度：33/56 任务完成 (58.9%)**
 
 ---
 
@@ -520,7 +521,10 @@
 
 ### 🎯 下一步
 
-开始 **第四阶段：核心业务API开发**，实现岗位管理、申请流程、工时管理等业务功能。
+继续 **第四阶段：核心业务API开发**：
+- 教师端岗位管理（创建/编辑/关闭）
+- 助教端工时管理（提交/列表/编辑）
+- 通知API（列表/标记已读/未读数）与前端通知中心组件
 
 ---
 

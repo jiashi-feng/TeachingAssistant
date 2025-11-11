@@ -33,11 +33,11 @@ urlpatterns = [
     # 用户认证模块
     path('api/auth/', include('accounts.urls')),
     
-    # 招募管理模块（教师端）- 第四阶段实现
-    # path('api/faculty/', include('recruitment.urls')),
+    # 招募管理与学生端岗位浏览
+    path('', include('recruitment.urls')),
     
-    # 申请管理模块（学生端）- 第四阶段实现
-    # path('api/student/', include('application.urls')),
+    # 申请管理模块（学生端）
+    path('', include('application.urls')),
     
     # 工时管理模块（助教端）- 第四阶段实现
     # path('api/ta/', include('timesheet.urls')),

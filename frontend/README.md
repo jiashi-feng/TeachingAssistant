@@ -29,6 +29,7 @@ npm run dev
 ```
 
 访问：http://localhost:8080
+（Vite 默认端口现为 5173，见下文配置）
 
 ### 生产构建
 
@@ -54,12 +55,11 @@ frontend/
 ├── public/                    # 静态资源
 ├── src/
 │   ├── api/                   # API请求封装
-│   │   ├── index.js          # axios配置
-│   │   ├── auth.js           # 认证相关API
-│   │   ├── student.js        # 学生端API
-│   │   ├── faculty.js        # 教师端API
-│   │   ├── ta.js             # 助教端API
-│   │   └── admin.js          # 管理员端API
+│   │   ├── index.js           # 统一导出（auth/positions/applications）
+│   │   ├── request.js         # axios封装（拦截器、token自动注入）
+│   │   ├── auth.js            # 认证相关API
+│   │   ├── positions.js       # 岗位浏览API（学生端）
+│   │   └── applications.js    # 申请API（学生/教师）
 │   │
 │   ├── assets/               # 静态资源（图片、样式等）
 │   │   ├── images/
@@ -145,7 +145,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8080,
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
@@ -176,14 +176,13 @@ VITE_API_BASE_URL=https://yourdomain.com/api
 4. **状态管理**：全局状态使用 Pinia
 5. **样式**：使用 scoped 样式或 CSS Modules
 
-## 📝 待办事项
+## 📝 近期更新与待办事项
 
-- [ ] 初始化 Vue 3 项目
-- [ ] 安装必要依赖
-- [ ] 配置路由和状态管理
-- [ ] 创建基础布局组件
-- [ ] 实现登录注册页面
-- [ ] 开发各角色功能页面
+- [x] 初始化 Vue 3 项目、依赖、路由/状态管理、基础布局
+- [x] 学生端：岗位列表/详情/我的申请 接入 API（positions/applications）
+- [x] 教师端：申请审核页 接入 API（列表 + 审核 + 撤销）
+- [x] 教师端：岗位管理页（列表/创建/编辑/关闭），审核页岗位下拉选择当前教师岗位
+- [ ] 通知中心组件与未读角标
 
 ## 🔗 相关链接
 

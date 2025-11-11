@@ -289,9 +289,9 @@ TeachingAssistant/
   - 学生/教师/助教看板页面
   - 响应式布局组件
 
-- 🟦 **进行中**：核心业务API和页面开发
+- 🟦 **进行中**：核心业务API和页面开发（本次更新：学生端岗位/申请、教师端审核、通知信号已完成）
   - 岗位管理（教师端）
-  - 申请流程（学生端）
+  - 申请流程（学生端）✅ 已完成基础闭环（浏览→投递→审核）
   - 工时管理（助教端）
 
 ---
@@ -363,11 +363,11 @@ npm run dev
 
 ### 访问系统
 
-- **前端页面**：http://localhost:5173 ✅可用
+- **前端页面**：http://localhost:5173 ✅可用（已接入学生端岗位/申请与教师端审核）
   - 登录页面：http://localhost:5173/login
   - 注册页面：http://localhost:5173/register
   
-- **后端API**：http://localhost:8000/api/ ✅可用
+- **后端API**：http://localhost:8000/api/ ✅可用（已启用 recruitment/application 路由）
   - 认证API：http://localhost:8000/api/auth/
   - Swagger文档：http://localhost:8000/swagger/（待配置）
 
@@ -452,7 +452,7 @@ python manage.py create_test_data
 - [后端API说明](backend/README.md)
 - [API接口文档](docs/api.md)
 
-### 核心接口示例
+### 核心接口示例（本次新增 ✅）
 
 #### 认证相关（已实现）✅
 
@@ -471,15 +471,23 @@ POST   /api/auth/token/refresh/     # 刷新Token
 #### 学生端
 
 ```
-GET    /api/student/positions/      # 浏览岗位列表
-POST   /api/student/applications/submit/  # 投递申请
+GET    /api/student/positions/                 # 浏览岗位列表（支持搜索/筛选/排序）
+GET    /api/student/positions/{id}/            # 岗位详情
+POST   /api/student/applications/submit/       # 投递申请（在线填写 或 上传文件）
+GET    /api/student/applications/              # 我的申请列表
+GET    /api/student/applications/{id}/         # 申请详情
 ```
 
 #### 教师端
 
 ```
-POST   /api/faculty/positions/      # 创建岗位
-POST   /api/faculty/applications/{id}/review/  # 审核申请
+GET    /api/faculty/positions/                      # 我的岗位列表（筛选/排序）
+POST   /api/faculty/positions/                      # 创建岗位
+PUT    /api/faculty/positions/{id}/                 # 编辑岗位
+PATCH  /api/faculty/positions/{id}/close/           # 关闭岗位
+GET    /api/faculty/positions/{id}/applications/    # 岗位申请列表
+POST   /api/faculty/applications/{id}/review/       # 审核申请（accept/reject），录用将递增 num_filled（防超额）
+POST   /api/faculty/applications/{id}/revoke/       # 撤销审核（恢复 reviewing，已录用会回退名额）
 ```
 
 #### 助教端

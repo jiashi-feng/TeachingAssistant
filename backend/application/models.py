@@ -43,7 +43,14 @@ class Application(models.Model):
     )
     resume = models.FileField(
         upload_to='resumes/%Y/%m/',
-        verbose_name='简历文件'
+        verbose_name='简历文件',
+        null=True,
+        blank=True
+    )
+    resume_text = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='在线填写简历'
     )
     applied_at = models.DateTimeField(
         auto_now_add=True,

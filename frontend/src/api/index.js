@@ -3,8 +3,12 @@
  */
 
 import auth from './auth'
+import positions from './positions'
+import applications from './applications'
 
 export default {
   auth,
+  positions,
+  applications,
 }
 

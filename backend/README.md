@@ -234,25 +234,26 @@ GET    /api/auth/check-username/     # 检查用户名可用性
 GET    /api/auth/check-email/        # 检查邮箱可用性
 ```
 
-### 学生端 (`/api/student/`)
+### 学生端 (`/api/student/`) ✅ 已实现
 
 ```
 GET    /api/student/positions/              # 浏览岗位列表
 GET    /api/student/positions/{id}/         # 岗位详情
-POST   /api/student/applications/submit/    # 投递申请
+POST   /api/student/applications/submit/    # 投递申请（在线填写 或 上传文件，二选一）
 GET    /api/student/applications/           # 我的申请
 GET    /api/student/dashboard/              # 学生看板
 ```
 
-### 教师端 (`/api/faculty/`)
+### 教师端 (`/api/faculty/`) ✅ 已实现
 
 ```
-POST   /api/faculty/positions/              # 创建岗位
-GET    /api/faculty/positions/              # 我的岗位
-PUT    /api/faculty/positions/{id}/         # 编辑岗位
-PATCH  /api/faculty/positions/{id}/close/   # 关闭岗位
-GET    /api/faculty/applications/           # 查看申请
-POST   /api/faculty/applications/{id}/review/  # 审核申请
+GET    /api/faculty/positions/                     # 我的岗位（筛选/搜索/排序）
+POST   /api/faculty/positions/                     # 创建岗位
+PUT    /api/faculty/positions/{id}/                # 编辑岗位
+PATCH  /api/faculty/positions/{id}/close/          # 关闭岗位
+GET    /api/faculty/positions/{id}/applications/   # 岗位的申请列表
+POST   /api/faculty/applications/{id}/review/      # 审核申请（accept/reject）
+POST   /api/faculty/applications/{id}/revoke/      # 撤销审核（恢复reviewing，录用名额回退）
 GET    /api/faculty/timesheets/             # 查看工时
 GET    /api/faculty/dashboard/              # 教师看板
 ```
@@ -299,6 +300,11 @@ POST   /api/notifications/{id}/read/    # 标记已读
 POST   /api/notifications/read-all/     # 全部标记已读
 GET    /api/notifications/unread-count/ # 未读数量
 ```
+
+#### 自动通知（Signals）✅ 已接入
+- 申请提交：通知岗位发布者（application_submitted）
+- 申请审核：通知申请人（application_accepted / application_rejected）
+- 审核撤销：通知申请人（application_reviewing）
 
 ---
 
