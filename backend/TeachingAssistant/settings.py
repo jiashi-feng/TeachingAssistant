@@ -13,11 +13,12 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 from dotenv import load_dotenv
 
-# 加载环境变量 (.env 文件位于项目根目录)
-load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 加载环境变量 (.env 文件位于项目根目录，即backend的上一级目录)
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
 
 # Quick-start development settings - unsuitable for production

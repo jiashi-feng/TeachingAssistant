@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from django.contrib.auth import authenticate, login, logout
 from django.utils import timezone
@@ -129,27 +130,29 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        try:
-            refresh_token = request.data.get('refresh_token')
-            
-            if not refresh_token:
-                return Response({
-                    'message': '缺少refresh_token'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # 将token加入黑名单
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            
+        # 同时兼容 refresh_token 与 refresh 两种字段，提升前后端兼容性
+        refresh_token = request.data.get('refresh_token') or request.data.get('refresh')
+
+        if not refresh_token:
             return Response({
-                'message': '登出成功'
-            }, status=status.HTTP_200_OK)
-        
-        except Exception as e:
-            return Response({
-                'message': '登出失败',
-                'error': str(e)
+                'message': '缺少refresh_token'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 将token加入黑名单；若token无效或已失效/已拉黑，也视为幂等成功
+        try:
+            token = RefreshToken(refresh_token)
+            try:
+                token.blacklist()
+            except Exception:
+                # 已失效/已拉黑等情况，视为登出成功（幂等）
+                pass
+            return Response({'message': '登出成功'}, status=status.HTTP_200_OK)
+        except TokenError:
+            # 无效的refresh token，同样视为登出成功（幂等）
+            return Response({'message': '登出成功'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            # 其他异常不应影响前端登出体验，也返回成功
+            return Response({'message': '登出成功'}, status=status.HTTP_200_OK)
 
 
 class ProfileView(APIView):
@@ -320,4 +323,28 @@ class CheckEmailView(APIView):
         return Response({
             'available': not exists,
             'message': '邮箱已注册' if exists else '邮箱可用'
+        }, status=status.HTTP_200_OK)
+
+
+
+class CheckUserIdView(APIView):
+    """
+    检查用户ID是否可用
+    GET /api/auth/check-user-id/?user_id=xxx
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        user_id = request.query_params.get('user_id', None)
+        
+        if not user_id:
+            return Response({
+                'message': '请提供用户ID'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        exists = User.objects.filter(user_id=user_id).exists()
+        
+        return Response({
+            'available': not exists,
+            'message': '用户ID已存在' if exists else '用户ID可用'
         }, status=status.HTTP_200_OK)

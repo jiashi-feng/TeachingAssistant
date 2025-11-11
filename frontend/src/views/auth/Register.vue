@@ -30,9 +30,22 @@
             v-model="registerForm.user_id"
             placeholder="学生: STU001, 教师: FAC001"
             clearable
+            @input="onUserIdInput"
+            @blur="checkUserIdAvailable"
           >
             <template #prepend>
               <el-icon><User /></el-icon>
+            </template>
+            <template #suffix>
+              <el-icon v-if="userIdChecking" class="is-loading">
+                <Loading />
+              </el-icon>
+              <el-icon v-else-if="userIdAvailable === true" color="#67c23a">
+                <CircleCheck />
+              </el-icon>
+              <el-icon v-else-if="userIdAvailable === false" color="#f56c6c">
+                <CircleClose />
+              </el-icon>
             </template>
           </el-input>
           <span class="form-tip">
@@ -188,7 +201,7 @@
           <el-form-item label="专业" prop="major">
             <el-input
               v-model="registerForm.major"
-              placeholder="如：软件工程"
+              placeholder="如：计算机科学与技术"
               clearable
             />
           </el-form-item>
@@ -211,7 +224,7 @@
           <el-form-item label="班级">
             <el-input
               v-model="registerForm.class_name"
-              placeholder="如：软工1班（可选）"
+              placeholder="如：计科1班（可选）"
               clearable
             />
           </el-form-item>
@@ -331,6 +344,10 @@ const usernameAvailable = ref(null)
 const emailChecking = ref(false)
 const emailAvailable = ref(null)
 
+// 用户ID检查状态
+const userIdChecking = ref(false)
+const userIdAvailable = ref(null)
+
 // 年级选项（最近5年）
 const currentYear = new Date().getFullYear()
 const gradeOptions = Array.from({ length: 5 }, (_, i) => currentYear - i)
@@ -400,6 +417,20 @@ const registerRules = computed(() => {
     user_id: [
       { required: true, message: '请输入用户ID', trigger: 'blur' },
       { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' },
+      {
+        validator: (rule, value, callback) => {
+          if (!value) {
+            callback()
+            return
+          }
+          if (userIdAvailable.value === false) {
+            callback(new Error('用户ID已存在，请重新输入'))
+          } else {
+            callback()
+          }
+        },
+        trigger: 'blur',
+      },
     ],
     username: [
       { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -477,6 +508,58 @@ const registerRules = computed(() => {
   
   return baseRules
 })
+
+  
+/**
+ * 检查用户ID是否可用
+ */
+let userIdCheckTimer = null
+const checkUserIdAvailable = async () => {
+  const userId = registerForm.user_id
+  if (!userId || userId.length < 6) {
+    userIdAvailable.value = null
+    if (registerFormRef.value) {
+      registerFormRef.value.clearValidate('user_id')
+    }
+    return
+  }
+  clearTimeout(userIdCheckTimer)
+  userIdCheckTimer = setTimeout(async () => {
+    userIdChecking.value = true
+    try {
+      const response = await api.auth.checkUserId(userId)
+      userIdAvailable.value = response.available
+      // 如果用户ID不可用，显示错误提示
+      if (!response.available) {
+        // 手动触发表单验证错误
+        if (registerFormRef.value) {
+          registerFormRef.value.validateField('user_id', (errorMessage) => {
+            if (errorMessage) {
+              // 错误信息已由表单验证规则处理
+            }
+          })
+        }
+      } else {
+        // 可用则清除可能遗留的错误提示
+        if (registerFormRef.value) {
+          registerFormRef.value.clearValidate('user_id')
+        }
+      }
+    } catch (error) {
+      userIdAvailable.value = false
+    } finally {
+      userIdChecking.value = false
+    }
+  }, 500)
+}
+
+// 当用户编辑用户ID时，清除旧的校验提示与状态
+const onUserIdInput = () => {
+  userIdAvailable.value = null
+  if (registerFormRef.value) {
+    registerFormRef.value.clearValidate('user_id')
+  }
+}
 
 /**
  * 检查用户名是否可用

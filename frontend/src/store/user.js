@@ -79,7 +79,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       // 调用后端登出接口（将refresh token加入黑名单）
       if (refreshToken.value) {
-        await api.auth.logout({ refresh: refreshToken.value })
+        await api.auth.logout({ refresh_token: refreshToken.value })
       }
     } catch (error) {
       console.error('登出接口调用失败:', error)

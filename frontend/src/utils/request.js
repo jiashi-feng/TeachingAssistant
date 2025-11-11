@@ -74,6 +74,11 @@ service.interceptors.response.use(
         case 400:
           // 请求参数错误
           if (typeof data === 'object') {
+            // 优先显示后端返回的通用 message
+            if (data.message && typeof data.message === 'string') {
+              ElMessage.error(data.message)
+              break
+            }
             // 显示第一个字段的错误信息
             const firstError = Object.values(data)[0]
             ElMessage.error(Array.isArray(firstError) ? firstError[0] : firstError)

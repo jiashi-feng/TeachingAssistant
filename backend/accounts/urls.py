@@ -22,6 +22,7 @@ from .views import (
     # 辅助接口
     CheckUsernameView,
     CheckEmailView,
+    CheckUserIdView,
 )
 
 app_name = 'accounts'
@@ -53,5 +54,6 @@ urlpatterns = [
     # ==============================================================================
     path('check-username/', CheckUsernameView.as_view(), name='check_username'),
     path('check-email/', CheckEmailView.as_view(), name='check_email'),
+    path('check-user-id/', CheckUserIdView.as_view(), name='check_user_id'),
 ]
 

@@ -76,6 +76,14 @@ export default {
     })
   },
 
+  // 检查用户ID是否可用
+  checkUserId(userId) {
+    return request({
+      url: '/auth/check-user-id/',
+      method: 'get',
+      params: { user_id: userId },
+    })
+  },
   // 刷新Token
   refreshToken(refresh) {
     return request({
