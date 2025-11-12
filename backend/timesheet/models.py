@@ -103,7 +103,9 @@ class Timesheet(models.Model):
         ]
     
     def __str__(self):
-        return f'{self.ta.real_name} - {self.position.title} - {self.month.strftime("%Y年%m月")}'
+        # 使用 f-string 避免 Windows locale 编码问题
+        month_str = f"{self.month.year}年{self.month.month:02d}月"
+        return f'{self.ta.real_name} - {self.position.title} - {month_str}'
     
     def is_pending(self):
         """判断工时表是否待审核"""
@@ -125,6 +127,14 @@ class Salary(models.Model):
     PAYMENT_STATUS_CHOICES = [
         ('pending', '待支付'),
         ('paid', '已支付'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('bank_transfer', '银行转账'),
+        ('alipay', '支付宝'),
+        ('wechat_pay', '微信支付'),
+        ('cash', '现金'),
+        ('other', '其他'),
     ]
     
     salary_id = models.AutoField(
@@ -174,7 +184,8 @@ class Salary(models.Model):
         null=True,
         blank=True,
         verbose_name='支付方式',
-        help_text='如: 银行转账, 支付宝'
+        help_text='如: 银行转账, 支付宝',
+        choices=PAYMENT_METHOD_CHOICES
     )
     transaction_id = models.CharField(
         max_length=100,
@@ -203,7 +214,9 @@ class Salary(models.Model):
         ]
     
     def __str__(self):
-        return f'{self.timesheet.ta.real_name} - {self.timesheet.month.strftime("%Y年%m月")} - ¥{self.amount}'
+        # 使用 f-string 避免 Windows locale 编码问题
+        month_str = f"{self.timesheet.month.year}年{self.timesheet.month.month:02d}月"
+        return f'{self.timesheet.ta.real_name} - {month_str} - ¥{self.amount}'
     
     def is_paid(self):
         """判断薪酬是否已支付"""

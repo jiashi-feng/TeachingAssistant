@@ -182,8 +182,11 @@ export const useUserStore = defineStore('user', () => {
   async function refreshUserInfo() {
     try {
       const response = await api.auth.getProfile()
-      setUserInfo(response)
-      return response
+      // 修复：从响应中提取 user 字段，与登录时的处理保持一致
+      // 后端返回格式：{message: "...", user: {...}}
+      const userData = response.user || response
+      setUserInfo(userData)
+      return userData
     } catch (error) {
       console.error('刷新用户信息失败:', error)
       throw error

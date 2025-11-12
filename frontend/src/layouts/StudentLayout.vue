@@ -56,10 +56,8 @@
         </div>
         
         <div class="header-right">
-          <!-- 通知 -->
-          <el-badge :value="12" class="header-item">
-            <el-icon :size="20"><Bell /></el-icon>
-          </el-badge>
+          <!-- 通知中心 -->
+          <NotificationCenter class="header-item" />
           
           <!-- 用户信息 -->
           <el-dropdown class="user-dropdown">
@@ -114,6 +112,7 @@ import {
   Expand,
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
+import NotificationCenter from '@/components/NotificationCenter.vue'
 
 const route = useRoute()
 const userStore = useUserStore()

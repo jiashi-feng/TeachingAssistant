@@ -18,19 +18,19 @@
             <el-icon :size="40" color="#409eff"><Briefcase /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">8</div>
+            <div class="stat-value">{{ dashboardData.statistics?.total_positions || 0 }}</div>
             <div class="stat-label">已发布岗位</div>
           </div>
         </el-card>
       </el-col>
 
       <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" @click="goToApplications">
           <div class="stat-icon" style="background-color: #e6a23c20">
             <el-icon :size="40" color="#e6a23c"><DocumentChecked /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">15</div>
+            <div class="stat-value">{{ dashboardData.statistics?.pending_applications || 0 }}</div>
             <div class="stat-label">待审核申请</div>
           </div>
         </el-card>
@@ -42,19 +42,19 @@
             <el-icon :size="40" color="#67c23a"><User /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">12</div>
+            <div class="stat-value">{{ dashboardData.statistics?.active_tas || 0 }}</div>
             <div class="stat-label">在岗助教</div>
           </div>
         </el-card>
       </el-col>
 
       <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" @click="goToTimesheetReview">
           <div class="stat-icon" style="background-color: #f56c6c20">
             <el-icon :size="40" color="#f56c6c"><Clock /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">5</div>
+            <div class="stat-value">{{ dashboardData.statistics?.pending_timesheets || 0 }}</div>
             <div class="stat-label">待审核工时</div>
           </div>
         </el-card>
@@ -69,9 +69,9 @@
             <span class="card-title">快捷操作</span>
           </template>
           <div class="quick-actions">
-            <el-button type="primary" :icon="Plus">发布新岗位</el-button>
-            <el-button type="warning" :icon="DocumentChecked">审核申请</el-button>
-            <el-button type="success" :icon="Clock">审核工时</el-button>
+            <el-button type="primary" :icon="Plus" @click="goToPositionManage">发布新岗位</el-button>
+            <el-button type="warning" :icon="DocumentChecked" @click="goToApplications">审核申请</el-button>
+            <el-button type="success" :icon="Clock" @click="goToTimesheetReview">审核工时</el-button>
           </div>
         </el-card>
       </el-col>
@@ -79,12 +79,46 @@
 
     <!-- 待办事项 -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="24">
+      <el-col :span="12">
         <el-card>
           <template #header>
-            <span class="card-title">待办事项</span>
+            <div class="card-header">
+              <span class="card-title">待审核申请</span>
+              <el-link type="primary" @click="goToApplications">查看全部 →</el-link>
+            </div>
           </template>
-          <el-empty description="正在开发中..."></el-empty>
+          <el-table :data="dashboardData.recent_applications" style="width: 100%" v-if="dashboardData.recent_applications?.length">
+            <el-table-column prop="position_title" label="岗位" />
+            <el-table-column prop="applicant_name" label="申请人" />
+            <el-table-column prop="status_display" label="状态" />
+            <el-table-column label="操作" width="100">
+              <template #default="scope">
+                <el-link type="primary" @click="goToApplicationReview(scope.row.application_id)">查看</el-link>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="暂无待审核申请" />
+        </el-card>
+      </el-col>
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <div class="card-header">
+              <span class="card-title">待审核工时</span>
+              <el-link type="primary" @click="goToTimesheetReview">查看全部 →</el-link>
+            </div>
+          </template>
+          <el-table :data="dashboardData.recent_timesheets" style="width: 100%" v-if="dashboardData.recent_timesheets?.length">
+            <el-table-column prop="position_title" label="岗位" />
+            <el-table-column prop="ta_name" label="助教" />
+            <el-table-column prop="month_display" label="月份" />
+            <el-table-column label="操作" width="100">
+              <template #default="scope">
+                <el-link type="primary" @click="goToTimesheetReview(scope.row.timesheet_id)">审核</el-link>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="暂无待审核工时" />
         </el-card>
       </el-col>
     </el-row>
@@ -92,7 +126,11 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import api from '@/api'
 import {
   Briefcase,
   DocumentChecked,
@@ -102,6 +140,55 @@ import {
 } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
+const router = useRouter()
+
+const dashboardData = ref({
+  statistics: {},
+  recent_positions: [],
+  recent_applications: [],
+  recent_timesheets: [],
+})
+
+const loading = ref(false)
+
+// 获取看板数据
+const fetchDashboardData = async () => {
+  loading.value = true
+  try {
+    const response = await api.positions.getFacultyDashboard()
+    dashboardData.value = response
+  } catch (error) {
+    console.error('获取看板数据失败:', error)
+    ElMessage.error('获取看板数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 路由跳转
+const goToPositionManage = () => {
+  router.push('/faculty/positions')
+}
+
+const goToApplications = () => {
+  router.push('/faculty/applications')
+}
+
+const goToTimesheetReview = (timesheetId) => {
+  if (timesheetId) {
+    router.push(`/faculty/timesheets?timesheet_id=${timesheetId}`)
+  } else {
+    router.push('/faculty/timesheets')
+  }
+}
+
+const goToApplicationReview = (applicationId) => {
+  router.push(`/faculty/applications?application_id=${applicationId}`)
+}
+
+onMounted(() => {
+  fetchDashboardData()
+})
 </script>
 
 <style scoped>
@@ -173,6 +260,12 @@ const userStore = useUserStore()
 
 .card-title {
   font-weight: 600;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .quick-actions {

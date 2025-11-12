@@ -46,8 +46,9 @@ class CustomAdminSite(admin.AdminSite):
             
             # 申请统计
             extra_context['application_count'] = Application.objects.count()
+            # 修复：待审核= submitted/reviewing 两种状态
             extra_context['pending_applications'] = Application.objects.filter(
-                status='pending'
+                status__in=['submitted', 'reviewing']
             ).count()
             extra_context['accepted_applications'] = Application.objects.filter(
                 status='accepted'
@@ -59,11 +60,10 @@ class CustomAdminSite(admin.AdminSite):
             ).count()
             
             # 本月薪酬统计
-            current_month = datetime.now().month
-            current_year = datetime.now().year
+            now = datetime.now()
             monthly_salary = Salary.objects.filter(
-                month__month=current_month,
-                month__year=current_year
+                timesheet__month__year=now.year,
+                timesheet__month__month=now.month,
             ).aggregate(total=Sum('amount'))['total'] or 0
             extra_context['monthly_salary'] = f"{monthly_salary:,.0f}"
             

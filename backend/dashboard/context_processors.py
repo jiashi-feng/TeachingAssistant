@@ -30,14 +30,16 @@ def admin_stats(request):
         
         # 申请统计
         application_count = Application.objects.count()
-        pending_applications = Application.objects.filter(status='pending').count()
+        # 修复：待审核= submitted/reviewing 两种状态
+        pending_applications = Application.objects.filter(
+            status__in=['submitted', 'reviewing']
+        ).count()
         
-        # 本月薪酬
-        current_month = datetime.now().month
-        current_year = datetime.now().year
+        # 本月薪酬（按工时月份 timesheet.month 统计）
+        now = datetime.now()
         monthly_salary = Salary.objects.filter(
-            month__month=current_month,
-            month__year=current_year
+            timesheet__month__year=now.year,
+            timesheet__month__month=now.month,
         ).aggregate(total=Sum('amount'))['total'] or 0
         
         return {

@@ -14,6 +14,8 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         fields = ['position', 'resume_text', 'resume']
 
     def validate(self, attrs):
+        from django.utils import timezone
+        
         request = self.context['request']
         user = request.user
         position = attrs.get('position')
@@ -22,7 +24,16 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
 
         # 必须二选一
         if not (has_text ^ has_file):
-            raise serializers.ValidationError('请在“在线填写”和“上传简历文件”中二选一。')
+            raise serializers.ValidationError('请在"在线填写"和"上传简历文件"中二选一。')
+
+        # 检查岗位状态
+        if position.status != 'open':
+            raise serializers.ValidationError('该岗位已关闭，无法申请。')
+        
+        # 检查申请截止时间
+        now = timezone.now()
+        if position.application_deadline < now:
+            raise serializers.ValidationError('该岗位申请已过期，无法申请。')
 
         # 同一岗位唯一申请
         if Application.objects.filter(position=position, applicant=user).exists():
@@ -45,10 +56,21 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
 
 class ApplicationListSerializer(serializers.ModelSerializer):
     position_title = serializers.CharField(source='position.title', read_only=True)
+    applicant_name = serializers.CharField(source='applicant.real_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
         model = Application
-        fields = ['application_id', 'position', 'position_title', 'status', 'applied_at']
+        fields = [
+            'application_id',
+            'position',
+            'position_title',
+            'applicant',
+            'applicant_name',
+            'status',
+            'status_display',
+            'applied_at',
+        ]
         read_only_fields = fields
 
 

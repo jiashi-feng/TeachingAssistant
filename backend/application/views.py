@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from accounts.permissions import IsStudent, IsFaculty
+from accounts.models import Student
 from .models import Application
 from .serializers import (
     ApplicationCreateSerializer,
@@ -32,7 +33,14 @@ class MyApplications(generics.ListAPIView):
     serializer_class = ApplicationListSerializer
 
     def get_queryset(self):
-        return Application.objects.filter(applicant=self.request.user).select_related('position')
+        queryset = Application.objects.filter(applicant=self.request.user).select_related('position')
+        
+        # 支持按状态筛选
+        status = self.request.query_params.get('status', None)
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        return queryset
 
 
 class MyApplicationDetail(generics.RetrieveAPIView):
@@ -84,6 +92,16 @@ class ReviewApplication(APIView):
                 # 保存岗位以触发 Position.save 中的状态联动（可能变为 filled）
                 pos.save(update_fields=['num_filled', 'updated_at', 'status'])
                 app.status = 'accepted'
+                
+                # 更新学生的助教状态
+                try:
+                    student = Student.objects.get(user=app.applicant)
+                    if not student.is_ta:
+                        student.is_ta = True
+                        student.ta_since = timezone.now().date()
+                        student.save(update_fields=['is_ta', 'ta_since', 'updated_at'])
+                except Student.DoesNotExist:
+                    pass  # 如果不是学生，跳过
             else:
                 app.status = 'rejected'
 
@@ -112,9 +130,29 @@ class RevokeApplicationReview(APIView):
                 return Response({'detail': '仅已审核的申请可撤销'}, status=400)
 
             pos = app.position
-            if app.status == 'accepted' and pos.num_filled > 0:
+            was_accepted = app.status == 'accepted'
+            
+            if was_accepted and pos.num_filled > 0:
                 pos.num_filled = pos.num_filled - 1
                 pos.save(update_fields=['num_filled', 'updated_at', 'status'])
+                
+                # 检查该学生是否还有其他已通过的申请
+                # 如果没有，则取消助教身份
+                other_accepted_apps = Application.objects.filter(
+                    applicant=app.applicant,
+                    status='accepted'
+                ).exclude(application_id=app.application_id)
+                
+                if not other_accepted_apps.exists():
+                    # 没有其他已通过的申请，取消助教身份
+                    try:
+                        student = Student.objects.get(user=app.applicant)
+                        if student.is_ta:
+                            student.is_ta = False
+                            student.ta_since = None
+                            student.save(update_fields=['is_ta', 'ta_since', 'updated_at'])
+                    except Student.DoesNotExist:
+                        pass  # 如果不是学生，跳过
 
             app.status = 'reviewing'
             app.reviewed_at = None

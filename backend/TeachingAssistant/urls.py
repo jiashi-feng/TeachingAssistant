@@ -39,14 +39,14 @@ urlpatterns = [
     # 申请管理模块（学生端）
     path('', include('application.urls')),
     
-    # 工时管理模块（助教端）- 第四阶段实现
-    # path('api/ta/', include('timesheet.urls')),
+    # 工时管理模块（助教端）
+    path('', include('timesheet.urls')),
     
-    # 数据看板模块（管理员端）- 第四阶段实现
-    # path('api/admin/', include('dashboard.urls')),
+    # 数据看板模块（管理员端）
+    path('', include('dashboard.urls')),
     
-    # 通知模块 - 第四阶段实现
-    # path('api/notifications/', include('notifications.urls')),
+    # 通知模块
+    path('', include('notifications.urls')),
 ]
 
 # ==============================================================================

@@ -58,7 +58,7 @@
         <el-form-item label="时薪"><el-input type="number" v-model.number="form.hourly_rate" /></el-form-item>
         <el-form-item label="开始日期"><el-date-picker v-model="form.start_date" type="date" value-format="YYYY-MM-DD" /></el-form-item>
         <el-form-item label="结束日期"><el-date-picker v-model="form.end_date" type="date" value-format="YYYY-MM-DD" /></el-form-item>
-        <el-form-item label="截止时间"><el-date-picker v-model="form.application_deadline" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" /></el-form-item>
+        <el-form-item label="截止时间"><el-date-picker v-model="form.application_deadline" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" format="YYYY-MM-DD HH:mm:ss" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialog.visible=false">取消</el-button>
@@ -147,19 +147,83 @@ const openEdit = (row) => {
 }
 
 const submitForm = async () => {
+  // 基本验证
+  if (!form.title || !form.course_name || !form.course_code) {
+    ElMessage.warning('请填写必填项：岗位标题、课程名称、课程代码')
+    return
+  }
+  if (!form.description || !form.requirements) {
+    ElMessage.warning('请填写岗位描述和任职要求')
+    return
+  }
+  if (!form.start_date || !form.end_date || !form.application_deadline) {
+    ElMessage.warning('请填写所有日期字段')
+    return
+  }
+  if (!form.num_positions || form.num_positions < 1) {
+    ElMessage.warning('招聘人数必须大于0')
+    return
+  }
+  
   try {
     submitting.value = true
+    // 准备提交数据，确保日期格式正确
+    const submitData = {
+      ...form,
+      // 确保日期格式正确
+      start_date: form.start_date,
+      end_date: form.end_date,
+      // 如果日期时间格式不是 ISO 8601，转换为标准格式
+      application_deadline: form.application_deadline ? 
+        (form.application_deadline.includes('T') ? form.application_deadline : form.application_deadline.replace(' ', 'T')) : 
+        form.application_deadline,
+    }
+    
+    let response
     if (dialog.mode === 'create') {
-      await api.positions.createPosition({ ...form })
+      response = await api.positions.createPosition(submitData)
       ElMessage.success('发布成功')
     } else {
-      await api.positions.updatePosition(dialog.currentId, { ...form })
+      response = await api.positions.updatePosition(dialog.currentId, submitData)
       ElMessage.success('保存成功')
     }
     dialog.visible = false
     loadData()
   } catch (e) {
-    ElMessage.error('提交失败，请检查表单')
+    // 检查响应状态码，如果是成功状态码，说明创建成功
+    if (e?.response?.status === 201 || e?.response?.status === 200) {
+      // 即使有错误对象，如果状态码是成功，说明创建成功
+      ElMessage.success('发布成功')
+      dialog.visible = false
+      loadData()
+      return
+    }
+    
+    // 显示详细的错误信息
+    console.error('提交失败:', e.response?.data || e)
+    let errorMsg = '提交失败，请检查表单'
+    
+    if (e?.response?.data) {
+      const errorData = e.response.data
+      // 处理不同的错误格式
+      if (errorData.detail) {
+        errorMsg = errorData.detail
+      } else if (errorData.message) {
+        errorMsg = errorData.message
+      } else if (typeof errorData === 'object') {
+        // 处理字段验证错误
+        const firstError = Object.values(errorData)[0]
+        if (Array.isArray(firstError)) {
+          errorMsg = firstError[0]
+        } else if (typeof firstError === 'string') {
+          errorMsg = firstError
+        } else {
+          errorMsg = JSON.stringify(errorData)
+        }
+      }
+    }
+    
+    ElMessage.error(errorMsg)
   } finally {
     submitting.value = false
   }

@@ -1,6 +1,14 @@
 import request from '@/utils/request'
 
 export default {
+  // 学生端：看板数据
+  getStudentDashboard() {
+    return request({
+      url: '/student/dashboard/',
+      method: 'get',
+    })
+  },
+
   // 学生端：岗位列表
   getStudentPositions(params) {
     return request({
@@ -50,6 +58,14 @@ export default {
     return request({
       url: `/faculty/positions/${positionId}/close/`,
       method: 'patch',
+    })
+  },
+
+  // 教师端：看板数据
+  getFacultyDashboard() {
+    return request({
+      url: '/faculty/dashboard/',
+      method: 'get',
     })
   },
 }

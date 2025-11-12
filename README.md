@@ -82,6 +82,7 @@
 - **助教端**：按月填写工作日志、提交工时表
 - **教师端**：在线审核工时、添加评价意见
 - 薪酬自动核算（工时 × 时薪）
+- 管理后台自动计算薪酬（选择工时即填充金额与计算明细，支持支付方式下拉与流水号自动生成）
 - 完整的薪酬记录查询
 
 ### 🔔 消息通知
@@ -141,7 +142,7 @@ Django 3.2+                    # Web框架
 ┌─────────────────┐          ┌─────────────────┐
 │                 │          │                 │
 │  Vue 3 Frontend │  ◄────►  │  Django Backend │
-│   (Port 8080)   │   HTTP   │   (Port 8000)   │
+│   (Port 5173)   │   HTTP   │   (Port 8000)   │
 │                 │  RESTful │                 │
 └─────────────────┘   API    └─────────────────┘
                                       │
@@ -199,10 +200,18 @@ TeachingAssistant/
 │   │
 │   ├── timesheet/                     # 工时管理模块（助教端）✅模型完成
 │   │   ├── models.py                  # Timesheet + Salary模型 ✅
-│   │   └── admin.py                   # Admin后台配置 ✅
+│   │   ├── serializers.py             # 工时/薪酬序列化器（含助教&教师视图）
+│   │   ├── views.py                   # 工时提交、列表、教师审核、薪酬API
+│   │   ├── admin.py                   # Admin后台配置（自动计算薪酬、支付信息）✅
+│   │   ├── signals.py                 # 工时提交/审核自动通知 ✅
+│   │   └── static/timesheet/js/
+│   │       └── salary_admin.js        # Django Admin自动计算薪酬脚本 ✅
 │   │
 │   ├── notifications/                 # 通知模块 ✅模型完成
 │   │   ├── models.py                  # Notification模型 ✅
+│   │   ├── serializers.py             # 通知序列化器
+│   │   ├── views.py                   # 通知列表/详情/已读API
+│   │   ├── signals.py                 # 关键事件自动通知（岗位/申请/工时）✅
 │   │   └── admin.py                   # Admin后台配置 ✅
 │   │
 │   ├── dashboard/                     # 数据看板模块（管理员端）
@@ -223,23 +232,31 @@ TeachingAssistant/
 ├── frontend/                          # Vue前端 ✅已完成基础架构
 │   ├── src/
 │   │   ├── api/                       # API请求封装 ✅
+│   │   │   ├── index.js               # 统一导出
+│   │   │   ├── request.js             # axios拦截器（自动携带Token）
+│   │   │   ├── auth.js                # 认证API
+│   │   │   ├── positions.js           # 岗位/看板API（学生/教师）
+│   │   │   ├── applications.js        # 申请管理API
+│   │   │   ├── timesheets.js          # 工时/薪酬API（助教/教师）
+│   │   │   └── notifications.js       # 通知中心API
 │   │   ├── components/                # 公共组件
-│   │   ├── layouts/                   # 布局组件 ✅
-│   │   │   ├── StudentLayout.vue      # 学生端布局 ✅
-│   │   │   └── FacultyLayout.vue      # 教师端布局 ✅
+│   │   │   └── NotificationCenter.vue # 通知中心（未读角标、自动刷新）
+│   │   ├── layouts/                   # 基础布局 ✅
+│   │   │   ├── StudentLayout.vue
+│   │   │   ├── TALayout.vue
+│   │   │   ├── FacultyLayout.vue
+│   │   │   └── AdminLayout.vue
 │   │   ├── views/                     # 页面组件
-│   │   │   ├── auth/                  # 认证页面 ✅
-│   │   │   │   ├── Login.vue          # 登录页 ✅
-│   │   │   │   └── Register.vue       # 注册页 ✅
-│   │   │   ├── student/               # 学生端页面 ✅部分完成
-│   │   │   │   └── Dashboard.vue      # 学生看板 ✅
-│   │   │   └── faculty/               # 教师端页面 ✅部分完成
-│   │   │       └── Dashboard.vue      # 教师看板 ✅
-│   │   ├── router/                    # 路由配置 ✅
-│   │   │   └── index.js               # 基于角色的路由 ✅
-│   │   ├── store/                     # 状态管理（Pinia）✅
-│   │   │   └── user.js                # 用户状态管理 ✅
-│   │   ├── utils/                     # 工具函数 ✅
+│   │   │   ├── auth/                  # 登录/注册
+│   │   │   ├── student/               # 学生端（看板、岗位列表/详情、申请列表）
+│   │   │   ├── ta/                    # 助教端（工时管理、薪酬记录）
+│   │   │   ├── faculty/               # 教师端（看板、岗位管理、工时审核）
+│   │   │   └── admin/                 # 管理员端（待接入）
+│   │   ├── router/                    # 路由配置（角色路由守卫）✅
+│   │   ├── store/                     # Pinia状态管理 ✅
+│   │   │   ├── user.js                # 用户/角色信息
+│   │   │   └── app.js                 # 应用级UI状态
+│   │   ├── utils/                     # 工具函数（auth/storage/date等）
 │   │   └── main.js                    # 入口文件 ✅
 │   ├── public/                        # 公共资源
 │   ├── package.json                   # NPM依赖配置 ✅
@@ -253,7 +270,7 @@ TeachingAssistant/
 ├── Design.md                          # 系统设计文档 ✅
 ├── DATABASE_DESIGN.md                 # 数据库设计文档 ✅
 ├── README.md                          # 项目主说明
-├── TODO.md                            # 开发任务清单 ✅进度46.4%
+├── TODO.md                            # 开发任务清单 ✅进度≈50%
 └── PROJECT_STRUCTURE.md               # 项目结构详解
 ```
 
@@ -280,6 +297,8 @@ TeachingAssistant/
   - Django Admin后台优化（统计看板、布局优化）
   - 用户管理功能（创建、编辑、删除）
   - 数据统计看板（用户、岗位、申请、薪酬统计）
+  - 薪酬管理自动化（选择工时自动计算金额、生成流水号、支付方式下拉）
+  - 修复统计口径（待审核申请、月度薪酬按工时月份统计）
 
 - ✅ **第五阶段（部分）：前端开发** (2025-10-16完成)
   - Vue 3 + Vite 项目架构
@@ -289,7 +308,7 @@ TeachingAssistant/
   - 学生/教师/助教看板页面
   - 响应式布局组件
 
-- 🟦 **进行中**：核心业务API和页面开发（本次更新：学生端岗位/申请、教师端审核、通知信号已完成）
+- 🟦 **进行中**：核心业务API和页面开发（本次更新：学生端岗位/申请、教师端审核详情、通知中心、薪酬自动化已完成）
   - 岗位管理（教师端）
   - 申请流程（学生端）✅ 已完成基础闭环（浏览→投递→审核）
   - 工时管理（助教端）
@@ -488,13 +507,20 @@ PATCH  /api/faculty/positions/{id}/close/           # 关闭岗位
 GET    /api/faculty/positions/{id}/applications/    # 岗位申请列表
 POST   /api/faculty/applications/{id}/review/       # 审核申请（accept/reject），录用将递增 num_filled（防超额）
 POST   /api/faculty/applications/{id}/revoke/       # 撤销审核（恢复 reviewing，已录用会回退名额）
+GET    /api/faculty/timesheets/                     # 查看助教工时列表
+GET    /api/faculty/timesheets/{id}/                # 工时详情（仅限当前教师岗位）
 ```
 
 #### 助教端
 
 ```
-POST   /api/ta/timesheets/          # 提交工时
-GET    /api/ta/salaries/            # 查看薪酬
+POST   /api/ta/timesheets/                    # 提交工时
+GET    /api/ta/timesheets/                    # 我的工时列表（筛选、分页）
+PUT    /api/ta/timesheets/{id}/               # 编辑工时（待审核状态）
+GET    /api/ta/timesheets/{id}/               # 工时详情
+GET    /api/ta/salaries/                      # 查看薪酬列表
+GET    /api/ta/salaries/{id}/                 # 薪酬详情
+GET    /api/ta/dashboard/                     # 助教数据看板
 ```
 
 ---
@@ -531,7 +557,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 确保 `backend/TeachingAssistant/settings.py` 中配置了：
 ```python
-CORS_ALLOWED_ORIGINS = ["http://localhost:8080"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 ```
 
 ### 2. JWT Token过期

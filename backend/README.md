@@ -49,22 +49,24 @@ backend/
 │   ├── urls.py
 │   └── tests.py
 │
-├── timesheet/              # 工时管理模块 ✅模型完成
+├── timesheet/              # 工时管理模块 ✅
 │   ├── migrations/         # ✅已迁移
-│   ├── models.py           # Timesheet/Salary模型 ✅
-│   ├── admin.py            # Admin后台配置 ✅
-│   ├── views.py            # 工时管理API
-│   ├── serializers.py
+│   ├── models.py           # Timesheet/Salary模型（含支付信息、流水号）✅
+│   ├── serializers.py      # 工时/薪酬序列化器（助教、教师、管理员）
+│   ├── views.py            # 工时提交、列表、详情、审核、薪酬API
+│   ├── admin.py            # Admin后台配置（自动计算薪酬、支付信息表单）
+│   ├── signals.py          # 工时提交/审核通知
 │   ├── urls.py
+│   ├── static/timesheet/js/salary_admin.js  # Django Admin薪酬自动计算脚本
 │   └── tests.py
 │
-├── notifications/          # 通知模块 ✅模型完成
+├── notifications/          # 通知模块 ✅
 │   ├── migrations/         # ✅已迁移
 │   ├── models.py           # Notification通知模型 ✅
+│   ├── serializers.py      # 通知序列化器
+│   ├── views.py            # 通知列表、已读、详情API
+│   ├── signals.py          # 信号处理（自动通知：岗位/申请/工时/薪酬）
 │   ├── admin.py            # Admin后台配置 ✅
-│   ├── views.py            # 通知API
-│   ├── serializers.py
-│   ├── signals.py          # 信号处理（自动通知）
 │   ├── urls.py
 │   └── tests.py
 │
@@ -133,7 +135,7 @@ backend/
   - 快捷操作按钮优化（创建用户、岗位、审核申请）
   - 用户管理功能（13个模型的Admin配置）
 
-**当前进度：46.4% (26/56任务完成) | 里程碑M3已达成 + 管理后台完成**
+**当前进度：≈50%（核心流程贯通 + 管理后台自动化完成） | 新增：教师工时详情、薪酬自动计算、支付信息优化**
 
 ---
 
@@ -254,18 +256,22 @@ PATCH  /api/faculty/positions/{id}/close/          # 关闭岗位
 GET    /api/faculty/positions/{id}/applications/   # 岗位的申请列表
 POST   /api/faculty/applications/{id}/review/      # 审核申请（accept/reject）
 POST   /api/faculty/applications/{id}/revoke/      # 撤销审核（恢复reviewing，录用名额回退）
-GET    /api/faculty/timesheets/             # 查看工时
-GET    /api/faculty/dashboard/              # 教师看板
+GET    /api/faculty/timesheets/                    # 查看助教工时列表
+GET    /api/faculty/timesheets/{id}/               # 工时详情（仅限当前教师岗位）
+POST   /api/faculty/timesheets/{id}/review/        # 审核工时（approve/reject）
+GET    /api/faculty/dashboard/                     # 教师看板
 ```
 
 ### 助教端 (`/api/ta/`)
 
 ```
-POST   /api/ta/timesheets/          # 提交工时
-GET    /api/ta/timesheets/          # 我的工时
-PUT    /api/ta/timesheets/{id}/     # 编辑工时
-GET    /api/ta/salaries/            # 薪酬记录
-GET    /api/ta/dashboard/           # 助教看板
+POST   /api/ta/timesheets/                    # 提交工时
+GET    /api/ta/timesheets/                    # 我的工时（筛选/分页）
+PUT    /api/ta/timesheets/{id}/               # 编辑工时（待审核状态）
+GET    /api/ta/timesheets/{id}/               # 工时详情
+GET    /api/ta/salaries/                      # 薪酬记录列表
+GET    /api/ta/salaries/{id}/                 # 薪酬详情
+GET    /api/ta/dashboard/                     # 助教看板
 ```
 
 ### 管理员端
@@ -280,6 +286,7 @@ http://localhost:8000/admin/           # Django Admin管理后台
 - 13个模型的完整CRUD操作
 - 快捷操作按钮
 - 实时数据统计
+- 薪酬自动计算与支付信息录入（自动金额、计算明细、流水号、支付方式下拉）
 ```
 
 #### RESTful API (`/api/admin/`)
@@ -544,7 +551,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 ```python
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",  # 开发环境
+    "http://localhost:5173",  # 开发环境
     "https://yourdomain.com",  # 生产环境
 ]
 ```
