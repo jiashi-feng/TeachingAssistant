@@ -4,6 +4,7 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.utils.html import format_html
 from .models import User, Role, Permission, UserRole, RolePermission, Student, Faculty, Administrator
 
 
@@ -22,7 +23,7 @@ class UserAdmin(BaseUserAdmin):
     
     fieldsets = (
         ('基本信息', {
-            'fields': ('user_id', 'username', 'email', 'password')
+            'fields': ('user_id', 'username', 'email', 'password_status')
         }),
         ('个人信息', {
             'fields': ('real_name', 'phone', 'avatar')
@@ -42,7 +43,43 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
     
-    readonly_fields = ['date_joined', 'last_login', 'created_at', 'updated_at']
+    readonly_fields = ['date_joined', 'last_login', 'created_at', 'updated_at', 'password_status']
+
+    def password_status(self, obj):
+        """简单的密码状态显示方法"""
+        if obj and obj.password:
+            return '●●●●●●●● (密码已安全设置)'
+        return '未设置密码'
+    password_status.short_description = '密码状态'
+
+    def get_fieldsets(self, request, obj=None):
+        """动态生成fieldsets，只在编辑时显示密码状态"""
+        if obj:  # 编辑现有用户
+            return (
+                ('基本信息', {
+                    'fields': ('user_id', 'username', 'email', 'password_status')
+                }),
+                ('个人信息', {
+                    'fields': ('real_name', 'phone', 'avatar')
+                }),
+                ('权限', {
+                    'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
+                }),
+                ('重要日期', {
+                    'fields': ('last_login', 'date_joined')
+                }),
+            )
+        else:  # 创建新用户
+            return super().get_fieldsets(request, obj)
+
+    def get_fields(self, request, obj=None):
+        """获取字段列表"""
+        if obj:  # 编辑现有用户
+            return ['user_id', 'username', 'email', 'password_status', 'real_name', 'phone', 'avatar', 
+                   'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions', 
+                   'last_login', 'date_joined']
+        else:  # 创建新用户
+            return super().get_fields(request, obj)
 
 
 # ==============================================================================

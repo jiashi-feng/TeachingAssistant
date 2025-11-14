@@ -47,6 +47,15 @@ export default {
     })
   },
 
+  // 教师端：获取所有申请（不按岗位筛选）
+  getAllApplications(params) {
+    return request({
+      url: '/faculty/applications/',
+      method: 'get',
+      params,
+    })
+  },
+
   // 教师端：审核申请
   reviewApplication(applicationId, action, notes) {
     return request({

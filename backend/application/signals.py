@@ -21,6 +21,19 @@ def on_application_created(sender, instance: Application, created: bool, **kwarg
         priority='medium',
     )
 
+    #通知学生本人申请提交成功
+    Notification.objects.create(
+        recipient=instance.applicant,
+        sender=instance.position.posted_by,
+        notification_type='application_submitted',
+        category='application',
+        title='申请提交成功',
+        message=f'您已成功申请岗位：{instance.position.title}，请等待审核。',
+        related_model='Application',
+        related_object_id=instance.application_id,
+        priority='low',
+    )
+
 
 @receiver(pre_save, sender=Application)
 def on_application_status_change(sender, instance: Application, **kwargs):

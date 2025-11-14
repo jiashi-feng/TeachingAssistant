@@ -61,6 +61,28 @@ class PositionApplications(generics.ListAPIView):
         position = get_object_or_404(Position, position_id=position_id, posted_by=self.request.user)
         return Application.objects.filter(position=position).select_related('position', 'applicant')
 
+class FacultyApplications(generics.ListAPIView):
+    permission_classes= [permissions.IsAuthenticated, IsFaculty]
+    serializer_class = ApplicationListSerializer
+
+    def get_queryset(self):
+        
+        queryset = Application.objects.filter(
+            position__posted_by=self.request.user
+        ).select_related('position', 'applicant')
+
+        # 支持按状态筛选
+        status =self.request.query_params.get('status', None)
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        # 支持按申请时间排序
+        ordering = self.request.query_params.get('ordering', '-applied_at')
+        if ordering:
+            queryset =queryset.order_by(ordering)
+
+        return queryset
+
 
 class ReviewApplication(APIView):
     permission_classes = [permissions.IsAuthenticated, IsFaculty]

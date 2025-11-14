@@ -60,8 +60,10 @@ class PositionAdmin(admin.ModelAdmin):
         }
         color, label = status_colors.get(obj.status, ('#909399', obj.get_status_display()))
         return format_html(
-            '<span style="background-color: {}; color: white; padding: 4px 12px; '
-            'border-radius: 12px; font-size: 12px; font-weight: 500;">{}</span>',
+            '<span style="background-color: {}; color: white; padding: 2px 8px; '
+            'border-radius: 8px; font-size: 11px; font-weight: 500; '
+            'white-space: nowrap; display: inline-block; min-width: 60px; '
+            'text-align: center;">{}</span>',
             color, label
         )
     status_colored.short_description = '状态'

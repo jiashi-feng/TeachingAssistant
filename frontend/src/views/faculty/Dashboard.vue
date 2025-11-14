@@ -13,7 +13,7 @@
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card"  @click="goToPositionManage">
           <div class="stat-icon" style="background-color: #409eff20">
             <el-icon :size="40" color="#409eff"><Briefcase /></el-icon>
           </div>

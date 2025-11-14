@@ -1,0 +1,22 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block after_field_sets %}
+<script>
+  // 隐藏密码技术信息
+  document.addEventListener('DOMContentLoaded', function () {
+    // 隐藏任何包含密码技术信息的元素
+    const elements = document.querySelectorAll('*');
+    elements.forEach(el => {
+      const text = el.textContent || '';
+      if (text.includes('算法:') ||
+        text.includes('迭代次数:') ||
+        text.includes('盐:') ||
+        text.includes('哈希:') ||
+        text.includes('pbkdf2_sha256')) {
+        el.style.display = 'none';
+      }
+    });
+  });
+</script>
+{% endblock %}

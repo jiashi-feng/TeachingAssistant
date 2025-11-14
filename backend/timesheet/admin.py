@@ -182,7 +182,7 @@ class SalaryAdmin(admin.ModelAdmin):
     form = SalaryAdminForm
     
     class Media:
-        js = ('timesheet/js/salary_admin.js',)
+        js = ('js/salary_admin.js',)
 
     list_display = [
         'salary_id', 'get_ta_name', 'get_month',
