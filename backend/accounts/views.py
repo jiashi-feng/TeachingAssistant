@@ -14,6 +14,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from django.contrib.auth import authenticate, login, logout
 from django.utils import timezone
+from django.conf import settings
 
 from .models import User
 from .serializers import (
@@ -177,12 +178,39 @@ class ProfileView(APIView):
         """
         更新用户基本信息
         PUT /api/auth/profile/
+        
+        支持更新字段：real_name, phone, email, avatar
+        头像上传需要 multipart/form-data 格式
         """
         user = request.user
         
         # 允许更新的字段
         allowed_fields = ['real_name', 'phone', 'email']
         
+        # 处理头像上传（multipart/form-data）
+        if 'avatar' in request.FILES:
+            avatar_file = request.FILES['avatar']
+            
+            # 验证文件类型
+            allowed_types = getattr(settings, 'ALLOWED_IMAGE_TYPES', ['image/jpeg', 'image/png', 'image/gif'])
+            if avatar_file.content_type not in allowed_types:
+                return Response({
+                    'message': '头像格式不支持',
+                    'error': f'仅支持 {", ".join(allowed_types)} 格式'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 验证文件大小（10MB = 10485760 bytes）
+            max_size = getattr(settings, 'FILE_UPLOAD_MAX_MEMORY_SIZE', 10485760)
+            if avatar_file.size > max_size:
+                return Response({
+                    'message': '头像文件过大',
+                    'error': f'文件大小不能超过 {max_size / 1024 / 1024:.1f}MB'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 保存头像
+            user.avatar = avatar_file
+        
+        # 更新其他字段
         for field in allowed_fields:
             if field in request.data:
                 setattr(user, field, request.data[field])

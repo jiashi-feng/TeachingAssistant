@@ -62,11 +62,11 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item>
+                <el-dropdown-item @click="router.push('/faculty/profile')">
                   <el-icon><User /></el-icon>
                   个人信息
                 </el-dropdown-item>
-                <el-dropdown-item>
+                <el-dropdown-item @click="router.push('/faculty/settings')">
                   <el-icon><Setting /></el-icon>
                   设置
                 </el-dropdown-item>
@@ -90,7 +90,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import {
   DataAnalysis,
@@ -108,6 +108,7 @@ import { ElMessageBox } from 'element-plus'
 import NotificationCenter from '@/components/NotificationCenter.vue'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 // 侧边栏折叠状态

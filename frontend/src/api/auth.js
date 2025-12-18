@@ -49,6 +49,20 @@ export default {
     })
   },
 
+  // 上传头像
+  uploadAvatar(file) {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return request({
+      url: '/auth/profile/',
+      method: 'put',
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
+
   // 修改密码
   changePassword(data) {
     return request({

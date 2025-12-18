@@ -78,6 +78,26 @@ const routes = [
           roles: ['student'],
         },
       },
+      {
+        path: 'profile',
+        name: 'StudentProfile',
+        component: () => import('@/views/user/Profile.vue'),
+        meta: {
+          title: '个人信息',
+          requiresAuth: true,
+          roles: ['student'],
+        },
+      },
+      {
+        path: 'settings',
+        name: 'StudentSettings',
+        component: () => import('@/views/user/Settings.vue'),
+        meta: {
+          title: '设置',
+          requiresAuth: true,
+          roles: ['student'],
+        },
+      },
     ],
   },
 
@@ -161,6 +181,26 @@ const routes = [
         component: () => import('@/views/faculty/TimesheetReview.vue'),
         meta: {
           title: '工时审核',
+          requiresAuth: true,
+          roles: ['faculty'],
+        },
+      },
+      {
+        path: 'profile',
+        name: 'FacultyProfile',
+        component: () => import('@/views/user/Profile.vue'),
+        meta: {
+          title: '个人信息',
+          requiresAuth: true,
+          roles: ['faculty'],
+        },
+      },
+      {
+        path: 'settings',
+        name: 'FacultySettings',
+        component: () => import('@/views/user/Settings.vue'),
+        meta: {
+          title: '设置',
           requiresAuth: true,
           roles: ['faculty'],
         },
