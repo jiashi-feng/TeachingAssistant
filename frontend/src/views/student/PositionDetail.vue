@@ -76,8 +76,9 @@
               <div v-if="fileName" style="margin-top:6px;color:#666;">已选择：{{ fileName }}</div>
             </div>
 
-            <div style="margin-top:12px;">
+            <div style="margin-top:12px; display:flex; gap:12px;">
               <el-button type="primary" :loading="submitting" @click="submit">投递申请</el-button>
+              <el-button type="success" :loading="chatStarting" @click="goChat">联系教师</el-button>
             </div>
           </template>
         </div>
@@ -121,6 +122,20 @@ const resumeText = ref('')
 const selectedFile = ref(null)
 const fileName = ref('')
 const submitting = ref(false)
+const chatStarting = ref(false)
+
+const goChat = async () => {
+  chatStarting.value = true
+  try {
+    const res = await api.chat.startConversationByPosition(id)
+    router.push({ path: '/student/chat', query: { conversation_id: res.conversation_id } })
+  } catch (e) {
+    const msg = e?.response?.data?.detail || '无法发起会话（需已申请该岗位或为该岗位助教）'
+    ElMessage.error(msg)
+  } finally {
+    chatStarting.value = false
+  }
+}
 
 const loadDetail = async () => {
   loading.value = true

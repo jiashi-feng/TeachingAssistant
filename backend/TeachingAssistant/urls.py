@@ -16,11 +16,15 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from dashboard.admin_trends import admin_trends_page
 
 urlpatterns = [
     # ==============================================================================
     # Django管理后台
     # ==============================================================================
+    # Admin 内趋势分析图表页（必须放在 admin/ 之前，否则会被 admin 的 catch-all 吞掉）
+    path('admin/reports/trends/', admin.site.admin_view(admin_trends_page), name='admin-trends-page'),
+
     path('admin/', admin.site.urls),
     
     # 退出登录清理页面
@@ -44,7 +48,10 @@ urlpatterns = [
     
     # 数据看板模块（管理员端）
     path('', include('dashboard.urls')),
-    
+
+    # 师生聊天
+    path('api/chat/', include('messaging.urls')),
+
     # 通知模块
     path('', include('notifications.urls')),
 ]

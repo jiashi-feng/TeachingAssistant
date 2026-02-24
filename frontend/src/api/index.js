@@ -7,6 +7,7 @@ import positions from './positions'
 import applications from './applications'
 import timesheets from './timesheets'
 import notifications from './notifications'
+import chat from './chat'
 
 export default {
   auth,
@@ -14,5 +15,6 @@ export default {
   applications,
   timesheets,
   notifications,
+  chat,
 }
 

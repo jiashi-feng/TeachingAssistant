@@ -29,6 +29,11 @@
           <el-icon><Document /></el-icon>
           <template #title>我的申请</template>
         </el-menu-item>
+
+        <el-menu-item index="/student/chat">
+          <el-icon><ChatDotRound /></el-icon>
+          <template #title>联系教师</template>
+        </el-menu-item>
         
         <!-- 助教专属菜单 -->
         <template v-if="userStore.isTA">
@@ -110,6 +115,7 @@ import {
   SwitchButton,
   Fold,
   Expand,
+  ChatDotRound,
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import NotificationCenter from '@/components/NotificationCenter.vue'

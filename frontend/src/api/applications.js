@@ -56,6 +56,14 @@ export default {
     })
   },
 
+  // 教师端：查看申请详情（包括简历）
+  getApplicationDetail(applicationId) {
+    return request({
+      url: `/faculty/applications/${applicationId}/`,
+      method: 'get',
+    })
+  },
+
   // 教师端：审核申请
   reviewApplication(applicationId, action, notes) {
     return request({

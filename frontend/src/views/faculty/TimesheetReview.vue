@@ -53,8 +53,15 @@
         </el-table-column>
         <el-table-column prop="submitted_at" label="提交时间" width="180" />
         <el-table-column prop="reviewed_by_name" label="审核人" width="100" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
+            <el-button
+              size="small"
+              type="info"
+              @click="goChatByTimesheet(row.timesheet_id)"
+            >
+              联系助教
+            </el-button>
             <el-button
               v-if="row.status === 'pending'"
               size="small"
@@ -150,9 +157,21 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import api from '@/api'
+
+const router = useRouter()
+
+const goChatByTimesheet = async (timesheetId) => {
+  try {
+    const res = await api.chat.startConversationByTimesheet(timesheetId)
+    router.push({ path: '/faculty/chat', query: { conversation_id: res.conversation_id } })
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.detail || '发起会话失败')
+  }
+}
 
 const loading = ref(false)
 const list = ref([])

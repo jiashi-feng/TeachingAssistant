@@ -24,8 +24,18 @@
           </template>
         </el-table-column>
         <el-table-column prop="applied_at" label="申请时间" min-width="180" />
-        <el-table-column label="操作" width="280">
+        <el-table-column label="操作" width="440">
           <template #default="{ row }">
+            <el-button
+              size="small"
+              type="primary"
+              @click="viewResume(row.application_id)"
+            >查看简历</el-button>
+            <el-button
+              size="small"
+              type="info"
+              @click="goChatByApplication(row.application_id)"
+            >联系学生</el-button>
             <el-button
               size="small"
               type="success"
@@ -52,18 +62,100 @@
         <el-button size="small" @click="loadData">刷新</el-button>
       </div>
     </el-card>
+
+    <!-- 简历查看对话框 -->
+    <el-dialog
+      v-model="resumeDialogVisible"
+      title="查看简历"
+      width="70%"
+      :close-on-click-modal="false"
+    >
+      <div v-loading="resumeLoading">
+        <div v-if="currentApplication">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="申请人">{{ currentApplication.applicant_name }}</el-descriptions-item>
+            <el-descriptions-item label="申请岗位">{{ currentApplication.position_title }}</el-descriptions-item>
+            <el-descriptions-item label="申请时间">{{ currentApplication.applied_at }}</el-descriptions-item>
+            <el-descriptions-item label="申请状态">
+              <el-tag :type="currentApplication.status==='accepted' ? 'success' : (currentApplication.status==='rejected' ? 'danger' : (currentApplication.status==='reviewing' ? 'warning' : 'info'))">
+                {{ getStatusText(currentApplication.status) }}
+              </el-tag>
+            </el-descriptions-item>
+          </el-descriptions>
+
+          <el-divider>简历内容</el-divider>
+
+          <!-- 文件简历 -->
+          <div v-if="currentApplication.resume_url" style="margin-bottom: 20px;">
+            <el-alert
+              title="该申请包含简历文件"
+              type="info"
+              :closable="false"
+              style="margin-bottom: 10px;"
+            />
+            <div>
+              <el-button type="primary" @click="downloadResume(currentApplication.resume_url)">
+                <el-icon><Download /></el-icon>
+                下载简历文件
+              </el-button>
+              <el-button type="success" @click="previewResume(currentApplication.resume_url)">
+                <el-icon><View /></el-icon>
+                在线预览
+              </el-button>
+            </div>
+          </div>
+
+          <!-- 在线填写简历 -->
+          <div v-if="currentApplication.resume_text">
+            <el-alert
+              title="在线填写简历"
+              type="success"
+              :closable="false"
+              style="margin-bottom: 10px;"
+            />
+            <el-card>
+              <div style="white-space: pre-wrap; line-height: 1.8; font-size: 14px;">
+                {{ currentApplication.resume_text }}
+              </div>
+            </el-card>
+          </div>
+
+          <!-- 无简历提示 -->
+          <el-empty v-if="!currentApplication.resume_url && !currentApplication.resume_text" description="该申请未包含简历信息" />
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="resumeDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download, View } from '@element-plus/icons-vue'
+
+const router = useRouter()
+
+const goChatByApplication = async (applicationId) => {
+  try {
+    const res = await api.chat.startConversationByApplication(applicationId)
+    router.push({ path: '/faculty/chat', query: { conversation_id: res.conversation_id } })
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.detail || '发起会话失败')
+  }
+}
 
 const loading = ref(false)
 const list = ref([])
 const positions = ref([])
 const selectedPositionId = ref('all') // 默认显示全部申请
+const resumeDialogVisible = ref(false)
+const resumeLoading = ref(false)
+const currentApplication = ref(null)
 
 const getStatusText = (status) => {
   const statusMap = {
@@ -150,6 +242,48 @@ const revoke = async (applicationId) => {
       ElMessage.error('撤销失败')
     }
   }
+}
+
+// 查看简历
+const viewResume = async (applicationId) => {
+  try {
+    resumeLoading.value = true
+    resumeDialogVisible.value = true
+    const data = await api.applications.getApplicationDetail(applicationId)
+    currentApplication.value = data
+  } catch (e) {
+    ElMessage.error('加载简历失败')
+    resumeDialogVisible.value = false
+  } finally {
+    resumeLoading.value = false
+  }
+}
+
+// 下载简历文件
+const downloadResume = (url) => {
+  if (!url) {
+    ElMessage.warning('简历文件不存在')
+    return
+  }
+  // 创建临时链接下载
+  const link = document.createElement('a')
+  link.href = url
+  link.download = ''
+  link.target = '_blank'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  ElMessage.success('开始下载简历文件')
+}
+
+// 预览简历文件
+const previewResume = (url) => {
+  if (!url) {
+    ElMessage.warning('简历文件不存在')
+    return
+  }
+  // 在新窗口打开文件
+  window.open(url, '_blank')
 }
 
 onMounted(loadMyPositions)

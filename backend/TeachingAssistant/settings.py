@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'timesheet',                     # 工时管理模块
     'notifications',                 # 通知模块
     'dashboard',                     # 数据看板模块
+    'messaging',                     # 师生聊天模块
 ]
 
 MIDDLEWARE = [

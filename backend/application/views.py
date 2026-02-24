@@ -84,6 +84,21 @@ class FacultyApplications(generics.ListAPIView):
         return queryset
 
 
+class FacultyApplicationDetail(generics.RetrieveAPIView):
+    """
+    教师查看申请详情（包括简历）
+    仅岗位发布者可查看该岗位的申请详情
+    """
+    permission_classes = [permissions.IsAuthenticated, IsFaculty]
+    serializer_class = ApplicationDetailSerializer
+    lookup_field = 'application_id'
+
+    def get_queryset(self):
+        return Application.objects.filter(
+            position__posted_by=self.request.user
+        ).select_related('position', 'applicant')
+
+
 class ReviewApplication(APIView):
     permission_classes = [permissions.IsAuthenticated, IsFaculty]
 

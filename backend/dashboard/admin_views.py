@@ -34,10 +34,10 @@ class CustomAdminSite(admin.AdminSite):
             # 用户统计
             extra_context['user_count'] = User.objects.count()
             extra_context['student_count'] = User.objects.filter(
-                roles__role__name='student'
+                userrole__role__role_code='student'
             ).distinct().count()
             extra_context['faculty_count'] = User.objects.filter(
-                roles__role__name='faculty'
+                userrole__role__role_code='faculty'
             ).distinct().count()
             
             # 岗位统计

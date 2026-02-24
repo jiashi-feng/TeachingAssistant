@@ -1,50 +1,42 @@
 <template>
-  <div class="notification-center">
-    <el-popover
-      placement="bottom-end"
-      :width="400"
-      trigger="click"
-      popper-class="notification-popover"
-      @show="handlePopoverShow"
-    >
-      <template #reference>
-        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="notification-badge">
-          <el-icon :size="20" class="notification-icon">
-            <Bell />
-          </el-icon>
-        </el-badge>
-      </template>
-
-      <div class="notification-content-wrapper">
-        <div class="notification-header">
-          <div class="header-title">
-            <span>通知中心</span>
-            <el-badge :value="unreadCount" :hidden="unreadCount === 0" type="danger" />
-          </div>
+  <div class="notification-list-page">
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <span>通知列表</span>
           <div class="header-actions">
             <el-button
               v-if="unreadCount > 0"
-              type="text"
+              type="primary"
               size="small"
               @click="markAllAsRead"
               :loading="markingAll"
             >
               全部已读
             </el-button>
-            <el-button type="text" size="small" :icon="Refresh" @click="loadNotifications" />
+            <el-button size="small" :icon="Refresh" @click="loadNotifications">刷新</el-button>
           </div>
         </div>
+      </template>
 
-        <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-          <el-tab-pane label="全部" name="all" />
-          <el-tab-pane label="未读" name="unread" />
-          <el-tab-pane label="系统" name="system" />
-          <el-tab-pane label="申请" name="application" />
-          <el-tab-pane label="工时" name="timesheet" />
-          <el-tab-pane label="薪酬" name="salary" />
-        </el-tabs>
+      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+        <el-tab-pane label="全部" name="all">
+          <template #label>
+            <span>全部 <el-badge :value="totalCount" :hidden="totalCount === 0" class="tab-badge" /></span>
+          </template>
+        </el-tab-pane>
+        <el-tab-pane label="未读" name="unread">
+          <template #label>
+            <span>未读 <el-badge :value="unreadCount" :hidden="unreadCount === 0" type="danger" class="tab-badge" /></span>
+          </template>
+        </el-tab-pane>
+        <el-tab-pane label="系统" name="system" />
+        <el-tab-pane label="申请" name="application" />
+        <el-tab-pane label="工时" name="timesheet" />
+        <el-tab-pane label="薪酬" name="salary" />
+      </el-tabs>
 
-        <div class="notification-list" v-loading="loading">
+      <div class="notification-list" v-loading="loading">
         <div
           v-for="notification in filteredNotifications"
           :key="notification.notification_id"
@@ -68,6 +60,7 @@
             <div class="notification-message">{{ notification.message }}</div>
             <div class="notification-meta">
               <span class="category-tag">{{ notification.category_display }}</span>
+              <span class="sender" v-if="notification.sender_name">来自：{{ notification.sender_name }}</span>
               <span class="time">{{ formatTime(notification.created_at) }}</span>
             </div>
           </div>
@@ -85,15 +78,10 @@
         <el-empty
           v-if="!loading && filteredNotifications.length === 0"
           description="暂无通知"
-          :image-size="80"
+          :image-size="120"
         />
-        </div>
-
-        <div class="notification-footer">
-          <el-button type="text" size="small" @click="viewAllNotifications">查看全部</el-button>
-        </div>
       </div>
-    </el-popover>
+    </el-card>
 
     <!-- 通知详情对话框 -->
     <el-dialog v-model="detailDialogVisible" title="通知详情" width="600px">
@@ -122,15 +110,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Bell, Refresh } from '@element-plus/icons-vue'
-import { useUserStore } from '@/store/user'
+import { Refresh } from '@element-plus/icons-vue'
 import api from '@/api'
-
-const router = useRouter()
-const userStore = useUserStore()
 
 const loading = ref(false)
 const markingAll = ref(false)
@@ -139,8 +122,6 @@ const unreadCount = ref(0)
 const activeTab = ref('all')
 const detailDialogVisible = ref(false)
 const currentNotification = ref(null)
-
-let refreshTimer = null
 
 // 筛选后的通知列表
 const filteredNotifications = computed(() => {
@@ -162,6 +143,9 @@ const filteredNotifications = computed(() => {
   })
 })
 
+// 总数量
+const totalCount = computed(() => notifications.value.length)
+
 // 加载通知列表
 const loadNotifications = async () => {
   try {
@@ -169,7 +153,6 @@ const loadNotifications = async () => {
     const response = await api.notifications.getNotifications({
       ordering: '-created_at',
     })
-    // axios 拦截器已返回 data，兼容分页/非分页两种结构
     notifications.value = response.results || response || []
   } catch (error) {
     console.error('加载通知失败:', error)
@@ -193,7 +176,6 @@ const loadUnreadCount = async () => {
 const markAsRead = async (notificationId) => {
   try {
     await api.notifications.markAsRead(notificationId)
-    // 更新本地状态
     const notification = notifications.value.find(n => n.notification_id === notificationId)
     if (notification) {
       notification.is_read = true
@@ -211,7 +193,6 @@ const markAllAsRead = async () => {
   try {
     markingAll.value = true
     await api.notifications.markAllAsRead()
-    // 更新本地状态
     notifications.value.forEach(n => {
       n.is_read = true
       n.read_at = new Date().toISOString()
@@ -228,11 +209,9 @@ const markAllAsRead = async () => {
 // 点击通知
 const handleNotificationClick = async (notification) => {
   try {
-    // 获取详情（会自动标记为已读）
     const response = await api.notifications.getNotificationDetail(notification.notification_id)
     currentNotification.value = response
     
-    // 更新本地状态
     if (!notification.is_read) {
       notification.is_read = true
       notification.read_at = response.read_at
@@ -248,34 +227,6 @@ const handleNotificationClick = async (notification) => {
 // 标签切换
 const handleTabChange = () => {
   // 标签切换时不需要重新加载数据，computed会自动更新
-}
-
-// Popover显示时加载数据
-const handlePopoverShow = async () => {
-  loadNotifications()
-  loadUnreadCount()
-  
-  // 如果是学生用户，刷新用户信息（确保is_ta状态是最新的）
-  // 这样当申请通过后，打开通知中心就能看到助教功能菜单
-  if (userStore.hasRole('student')) {
-    try {
-      await userStore.refreshUserInfo()
-    } catch (error) {
-      console.error('刷新用户信息失败:', error)
-    }
-  }
-}
-
-// 查看全部通知
-const viewAllNotifications = () => {
-  // 根据用户角色跳转到对应的通知列表页面
-  if (userStore.hasRole('faculty')) {
-    router.push('/faculty/notifications')
-  } else if (userStore.hasRole('student')) {
-    router.push('/student/notifications')
-  } else {
-    router.push('/notifications')
-  }
 }
 
 // 格式化时间
@@ -298,6 +249,8 @@ const formatTime = (timeStr) => {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
   }
 }
@@ -313,50 +266,21 @@ const getPriorityType = (priority) => {
   return map[priority] || ''
 }
 
-// 定时刷新未读数量
-const startRefreshTimer = () => {
-  refreshTimer = setInterval(() => {
-    loadUnreadCount()
-  }, 30000) // 每30秒刷新一次
-}
-
 onMounted(() => {
+  loadNotifications()
   loadUnreadCount()
-  startRefreshTimer()
-})
-
-onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-  }
 })
 </script>
 
 <style scoped>
-.notification-center {
-  display: inline-block;
+.notification-list-page {
+  padding: 20px;
 }
 
-.notification-badge {
-  cursor: pointer;
-  margin-right: 16px;
-}
-
-.notification-icon {
-  color: #606266;
-  transition: color 0.3s;
-}
-
-.notification-icon:hover {
-  color: #409eff;
-}
-
-.header-title {
+.card-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 16px;
 }
 
 .header-actions {
@@ -364,10 +288,19 @@ onUnmounted(() => {
   gap: 8px;
 }
 
+.tab-badge {
+  margin-left: 4px;
+}
+
+.notification-list {
+  margin-top: 20px;
+  min-height: 400px;
+}
+
 .notification-item {
   display: flex;
   justify-content: space-between;
-  padding: 12px;
+  padding: 16px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -394,16 +327,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .title-text {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   color: #303133;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .unread-badge {
@@ -411,16 +341,10 @@ onUnmounted(() => {
 }
 
 .notification-message {
-  font-size: 13px;
+  font-size: 14px;
   color: #606266;
-  line-height: 1.5;
-  margin-bottom: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  line-clamp: 2; /* 标准属性，提升兼容性 */
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  line-height: 1.6;
+  margin-bottom: 10px;
 }
 
 .notification-meta {
@@ -432,57 +356,22 @@ onUnmounted(() => {
 }
 
 .category-tag {
-  padding: 2px 6px;
+  padding: 2px 8px;
   background-color: #f0f0f0;
   border-radius: 3px;
 }
 
+.sender {
+  color: #909399;
+}
+
 .time {
-  flex: 1;
-  text-align: right;
+  margin-left: auto;
 }
 
 .notification-actions {
   flex-shrink: 0;
-  margin-left: 12px;
-}
-
-.notification-content-wrapper {
-  padding: 0 16px;
-}
-
-.notification-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #ebeef5;
-  margin-bottom: 12px;
-}
-
-.notification-list {
-  max-height: 400px;
-  overflow-y: auto;
-  margin-top: 12px;
-}
-
-.notification-footer {
-  padding-top: 12px;
-  border-top: 1px solid #ebeef5;
-  text-align: center;
-  margin-top: 12px;
-}
-</style>
-
-<style>
-.notification-popover {
-  padding: 0 !important;
-}
-
-.notification-popover .el-popover__title {
-  padding: 12px 16px;
-  margin: 0;
-  border-bottom: 1px solid #ebeef5;
+  margin-left: 16px;
 }
 </style>
 

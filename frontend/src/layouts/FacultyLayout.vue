@@ -34,6 +34,11 @@
           <el-icon><Clock /></el-icon>
           <template #title>工时审核</template>
         </el-menu-item>
+
+        <el-menu-item index="/faculty/chat">
+          <el-icon><ChatDotRound /></el-icon>
+          <template #title>联系学生/助教</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -103,6 +108,7 @@ import {
   SwitchButton,
   Fold,
   Expand,
+  ChatDotRound,
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import NotificationCenter from '@/components/NotificationCenter.vue'

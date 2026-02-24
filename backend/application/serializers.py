@@ -76,13 +76,24 @@ class ApplicationListSerializer(serializers.ModelSerializer):
 
 class ApplicationDetailSerializer(serializers.ModelSerializer):
     position_title = serializers.CharField(source='position.title', read_only=True)
+    applicant_name = serializers.CharField(source='applicant.real_name', read_only=True)
+    resume_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
         fields = [
-            'application_id', 'position', 'position_title', 'status',
-            'resume', 'resume_text', 'applied_at', 'reviewed_at', 'review_notes'
+            'application_id', 'position', 'position_title', 'applicant', 'applicant_name', 'status',
+            'resume', 'resume_url', 'resume_text', 'applied_at', 'reviewed_at', 'review_notes'
         ]
         read_only_fields = fields
+
+    def get_resume_url(self, obj):
+        """返回简历文件的完整URL"""
+        if obj.resume:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.resume.url)
+            return obj.resume.url
+        return None
 
 

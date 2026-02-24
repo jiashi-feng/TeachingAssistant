@@ -63,15 +63,16 @@ class IsFaculty(permissions.BasePermission):
 
 class IsAdministrator(permissions.BasePermission):
     """
-    管理员权限：只允许拥有 administrator 角色的用户访问
+    管理员权限：拥有 administrator 角色，或 Django 后台用户（is_staff）均可访问
+    这样从 Django Admin 点击导出/趋势链接时，Session 登录的 staff 用户也能通过
     """
     message = '只有管理员可以访问此接口'
     
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        
-        # 检查用户是否有administrator角色
+        if getattr(request.user, 'is_staff', False):
+            return True
         return UserRole.objects.filter(
             user=request.user,
             role__role_code='administrator'

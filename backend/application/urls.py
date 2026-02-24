@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SubmitApplication, MyApplications, MyApplicationDetail, PositionApplications, ReviewApplication, RevokeApplicationReview, FacultyApplications
+from .views import SubmitApplication, MyApplications, MyApplicationDetail, PositionApplications, ReviewApplication, RevokeApplicationReview, FacultyApplications, FacultyApplicationDetail
 
 urlpatterns = [
     # 学生端
@@ -10,6 +10,7 @@ urlpatterns = [
     # 教师端
     path('api/faculty/positions/<int:position_id>/applications/', PositionApplications.as_view(), name='faculty-position-applications'),
     path('api/faculty/applications/', FacultyApplications.as_view(), name= 'faculty-application-list'),
+    path('api/faculty/applications/<int:application_id>/', FacultyApplicationDetail.as_view(), name='faculty-application-detail'),
     path('api/faculty/applications/<int:application_id>/review/', ReviewApplication.as_view(), name='faculty-application-review'),
     path('api/faculty/applications/<int:application_id>/revoke/', RevokeApplicationReview.as_view(), name='faculty-application-revoke'),
 ]

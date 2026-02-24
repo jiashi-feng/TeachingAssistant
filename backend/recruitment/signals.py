@@ -36,7 +36,7 @@ def on_position_published(sender, instance: Position, created: bool, **kwargs):
                 return
             
             # 获取所有学生用户
-            students = User.objects.filter(roles__role=student_role).distinct()
+            students = User.objects.filter(userrole__role=student_role).distinct()
             
             # 为每个学生创建通知
             notifications = []

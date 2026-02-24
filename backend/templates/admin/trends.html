@@ -1,0 +1,138 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    .trends-wrap { max-width: 1200px; }
+    .trends-filters { display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin: 16px 0 20px; }
+    .trends-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:16px; margin-bottom:16px; }
+    .trends-title { font-size:18px; font-weight:600; margin:0 0 10px; }
+    .trends-grid { display:grid; grid-template-columns: 1fr; gap:16px; }
+    @media (min-width: 960px) { .trends-grid { grid-template-columns: 2fr 3fr; } }
+    table.trends-table { width:100%; border-collapse: collapse; }
+    table.trends-table th, table.trends-table td { padding:10px; border-bottom:1px solid #f0f0f0; text-align:left; }
+    table.trends-table th { background:#fafafa; font-weight:600; }
+    .hint { color:#6b7280; font-size:12px; margin-top:6px; }
+    .field label { display:block; font-size:12px; color:#374151; margin-bottom:6px; }
+    .field select, .field input { height:34px; padding:6px 10px; border:1px solid #d1d5db; border-radius:8px; min-width:160px; }
+    .btn { height:34px; padding:0 14px; border-radius:8px; border:0; background:#2563eb; color:#fff; font-weight:600; cursor:pointer; }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="trends-wrap">
+    <h1>历史趋势分析</h1>
+
+    <form class="trends-filters" method="get">
+      <div class="field">
+        <label>指标</label>
+        <select name="metric">
+          {% for key,label in metric_labels.items %}
+            <option value="{{ key }}" {% if metric == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>维度</label>
+        <select name="group_by">
+          <option value="year" {% if group_by == 'year' %}selected{% endif %}>按年</option>
+          <option value="month" {% if group_by == 'month' %}selected{% endif %}>按月</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>开始年份</label>
+        <input type="number" name="start_year" value="{{ start_year }}" min="2000" max="2100" />
+      </div>
+      <div class="field">
+        <label>结束年份</label>
+        <input type="number" name="end_year" value="{{ end_year }}" min="2000" max="2100" />
+      </div>
+      <button class="btn" type="submit">查询</button>
+    </form>
+    <div class="hint">提示：薪酬指标会同时展示「条数」与「总金额」。</div>
+
+    <div class="trends-card">
+      <div class="trends-title">趋势图</div>
+      <canvas id="trendsChart" height="110"></canvas>
+    </div>
+
+    <div class="trends-card">
+      <div class="trends-title">趋势表</div>
+      <div class="trends-grid">
+        <div>
+          <table class="trends-table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>数量</th>
+                {% if metric == 'salaries' %}
+                  <th>总金额</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in data %}
+                <tr>
+                  {% if group_by == 'year' %}
+                    <td>{{ row.year }}</td>
+                  {% else %}
+                    <td>{{ row.year }}-{{ row.month|stringformat:"02d" }}</td>
+                  {% endif %}
+                  <td>{{ row.count }}</td>
+                  {% if metric == 'salaries' %}
+                    <td>{{ row.total }}</td>
+                  {% endif %}
+                </tr>
+              {% empty %}
+                <tr><td colspan="3">暂无数据</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="hint">
+            若你希望将此页面导出为文件，可继续复用现有接口：<code>/api/admin/reports/export/</code>。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    const payload = JSON.parse('{{ chart_json|escapejs }}');
+    const ctx = document.getElementById('trendsChart');
+    const datasets = [
+      {
+        label: '数量',
+        data: payload.count,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37, 99, 235, 0.15)',
+        tension: 0.2,
+      }
+    ];
+    if (payload.metric === 'salaries') {
+      datasets.push({
+        label: '总金额',
+        data: payload.total,
+        borderColor: '#16a34a',
+        backgroundColor: 'rgba(22, 163, 74, 0.12)',
+        tension: 0.2,
+        yAxisID: 'y1',
+      });
+    }
+    new Chart(ctx, {
+      type: 'line',
+      data: { labels: payload.labels, datasets },
+      options: {
+        responsive: true,
+        scales: payload.metric === 'salaries' ? {
+          y: { beginAtZero: true, title: { display: true, text: '数量' } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '总金额' } }
+        } : { y: { beginAtZero: true } }
+      }
+    });
+  </script>
+{% endblock %}
+

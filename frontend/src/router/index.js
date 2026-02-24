@@ -98,6 +98,26 @@ const routes = [
           roles: ['student'],
         },
       },
+      {
+        path: 'notifications',
+        name: 'StudentNotifications',
+        component: () => import('@/views/user/NotificationList.vue'),
+        meta: {
+          title: '通知列表',
+          requiresAuth: true,
+          roles: ['student'],
+        },
+      },
+      {
+        path: 'chat',
+        name: 'StudentChat',
+        component: () => import('@/views/user/Chat.vue'),
+        meta: {
+          title: '联系教师',
+          requiresAuth: true,
+          roles: ['student'],
+        },
+      },
     ],
   },
 
@@ -201,6 +221,26 @@ const routes = [
         component: () => import('@/views/user/Settings.vue'),
         meta: {
           title: '设置',
+          requiresAuth: true,
+          roles: ['faculty'],
+        },
+      },
+      {
+        path: 'notifications',
+        name: 'FacultyNotifications',
+        component: () => import('@/views/user/NotificationList.vue'),
+        meta: {
+          title: '通知列表',
+          requiresAuth: true,
+          roles: ['faculty'],
+        },
+      },
+      {
+        path: 'chat',
+        name: 'FacultyChat',
+        component: () => import('@/views/user/Chat.vue'),
+        meta: {
+          title: '联系学生/助教',
           requiresAuth: true,
           roles: ['faculty'],
         },
