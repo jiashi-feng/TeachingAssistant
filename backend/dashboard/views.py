@@ -5,14 +5,17 @@
 
 import csv
 from io import StringIO
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import permissions
+from datetime import datetime, timedelta
+
+from django.core.cache import cache
 from django.db.models import Sum, Count
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.http import HttpResponse
 from django.utils import timezone
-from datetime import datetime, timedelta
+from rest_framework import permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from accounts.permissions import IsAdministrator
 from accounts.models import User
 from recruitment.models import Position
@@ -20,46 +23,79 @@ from application.models import Application
 from timesheet.models import Timesheet, Salary
 
 
+MONTHLY_REPORT_CACHE_TTL = 300  # 秒
+TRENDS_CACHE_TTL = 300  # 秒
+
+
 def get_monthly_stats(year, month):
     """公共：按年月计算统计，返回 period + statistics 字典。"""
+    cache_key = f'dashboard:monthly_stats:{year}:{month}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     start_date = datetime(year, month, 1).date()
     if month == 12:
         end_date = datetime(year + 1, 1, 1).date() - timedelta(days=1)
     else:
-        end_date = datetime(year + 1, month + 1, 1).date() - timedelta(days=1)
+        end_date = datetime(year, month + 1, 1).date() - timedelta(days=1)
+
     total_users = User.objects.count()
     students = User.objects.filter(userrole__role__role_code='student').distinct().count()
     faculty = User.objects.filter(userrole__role__role_code='faculty').distinct().count()
     administrators = User.objects.filter(userrole__role__role_code='administrator').distinct().count()
+
     positions_created = Position.objects.filter(created_at__year=year, created_at__month=month).count()
     total_positions = Position.objects.count()
     open_positions = Position.objects.filter(status='open').count()
+
     applications_submitted = Application.objects.filter(applied_at__year=year, applied_at__month=month).count()
     total_applications = Application.objects.count()
     pending_applications = Application.objects.filter(status__in=['submitted', 'reviewing']).count()
     accepted_applications = Application.objects.filter(status='accepted').count()
+
     timesheets_submitted = Timesheet.objects.filter(submitted_at__year=year, submitted_at__month=month).count()
     total_timesheets = Timesheet.objects.count()
     pending_timesheets = Timesheet.objects.filter(status='pending').count()
     approved_timesheets = Timesheet.objects.filter(status='approved').count()
+
     salaries_generated = Salary.objects.filter(generated_at__year=year, generated_at__month=month)
     monthly_salary_total = salaries_generated.aggregate(total=Sum('amount'))['total'] or 0
     monthly_salary_count = salaries_generated.count()
     paid_salary_count = salaries_generated.filter(payment_status='paid').count()
     total_salary = Salary.objects.aggregate(total=Sum('amount'))['total'] or 0
-    return {
-        'period': {'year': year, 'month': month, 'start_date': start_date.isoformat(), 'end_date': end_date.isoformat()},
+
+    data = {
+        'period': {
+            'year': year,
+            'month': month,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat(),
+        },
         'statistics': {
-            'total_users': total_users, 'students': students, 'faculty': faculty, 'administrators': administrators,
-            'positions_created_this_month': positions_created, 'total_positions': total_positions, 'open_positions': open_positions,
-            'applications_submitted_this_month': applications_submitted, 'total_applications': total_applications,
-            'pending_applications': pending_applications, 'accepted_applications': accepted_applications,
-            'timesheets_submitted_this_month': timesheets_submitted, 'total_timesheets': total_timesheets,
-            'pending_timesheets': pending_timesheets, 'approved_timesheets': approved_timesheets,
-            'salaries_generated_this_month': monthly_salary_count, 'monthly_salary_total': float(monthly_salary_total),
-            'paid_salary_count_this_month': paid_salary_count, 'total_salary': float(total_salary),
+            'total_users': total_users,
+            'students': students,
+            'faculty': faculty,
+            'administrators': administrators,
+            'positions_created_this_month': positions_created,
+            'total_positions': total_positions,
+            'open_positions': open_positions,
+            'applications_submitted_this_month': applications_submitted,
+            'total_applications': total_applications,
+            'pending_applications': pending_applications,
+            'accepted_applications': accepted_applications,
+            'timesheets_submitted_this_month': timesheets_submitted,
+            'total_timesheets': total_timesheets,
+            'pending_timesheets': pending_timesheets,
+            'approved_timesheets': approved_timesheets,
+            'salaries_generated_this_month': monthly_salary_count,
+            'monthly_salary_total': float(monthly_salary_total),
+            'paid_salary_count_this_month': paid_salary_count,
+            'total_salary': float(total_salary),
         },
     }
+    cache.set(cache_key, data, MONTHLY_REPORT_CACHE_TTL)
+    return data
 
 
 def get_trends_data(metric, group_by, start_year, end_year):
@@ -68,6 +104,11 @@ def get_trends_data(metric, group_by, start_year, end_year):
     metric: positions|applications|timesheets|salaries
     group_by: month|year
     """
+    cache_key = f'dashboard:trends:{metric}:{group_by}:{start_year}:{end_year}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     result = []
     if metric == 'positions':
         qs = Position.objects.filter(created_at__year__gte=start_year, created_at__year__lte=end_year)
@@ -103,6 +144,8 @@ def get_trends_data(metric, group_by, start_year, end_year):
             result = [{'year': r['yr'], 'month': r['mo'], 'count': r['count'], 'total': float(r['total'] or 0)} for r in qs]
     else:
         raise ValueError('metric_invalid')
+
+    cache.set(cache_key, result, TRENDS_CACHE_TTL)
     return result
 
 

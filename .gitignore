@@ -1,3 +1,23 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django / 媒体与静态产物
+backend/media/
+backend/staticfiles/
+
+# 前端构建产物
+frontend/node_modules/
+frontend/dist/
+
+# 环境与本地配置
+.env
+.env.*
+.DS_Store
+Thumbs.db
+
 # Python
 *.py[cod]
 *$py.class

@@ -57,7 +57,6 @@ backend/
 │   ├── admin.py            # Admin后台配置（自动计算薪酬、支付信息表单）
 │   ├── signals.py          # 工时提交/审核通知
 │   ├── urls.py
-│   ├── static/timesheet/js/salary_admin.js  # Django Admin薪酬自动计算脚本
 │   └── tests.py
 │
 ├── notifications/          # 通知模块 ✅
@@ -91,12 +90,11 @@ backend/
 │   ├── wsgi.py             # WSGI配置
 │   └── __init__.py
 │
-├── media/                  # 用户上传文件（不提交到Git）
+├── media/                  # 用户上传文件（不提交到Git，已在根 .gitignore 中忽略）
 │   ├── avatars/            # 用户头像
 │   └── resumes/            # 简历文件
 │
 ├── static/                 # 开发环境静态文件
-├── staticfiles/            # 生产环境静态文件收集目录
 ├── templates/              # 模板文件
 │   └── admin/              # Django Admin自定义模板 ✅
 │       └── index.html      # 优化的Admin首页 ✅
@@ -210,69 +208,36 @@ python manage.py runserver
 
 ---
 
-## 📡 API路由
+## 🧰 自定义管理命令（全局工具）
 
-### 认证相关 (`/api/auth/`) ✅ 已实现
+以下管理命令虽然物理上定义在 `accounts.management.commands` 中，但**作用范围覆盖整个后端项目**，属于“全局运维/初始化工具”：
 
-```
-# JWT Token
-POST   /api/auth/token/              # 获取JWT Token（登录）
-POST   /api/auth/token/refresh/      # 刷新Token
+- `python manage.py init_basic_data`
+  - 初始化角色、权限及角色-权限关联关系。
+  - 可多次执行，具有幂等性（已存在的数据会被跳过或更新）。
 
-# 用户认证
-POST   /api/auth/register/           # 用户注册（学生/教师/管理员）
-POST   /api/auth/login/              # 用户登录
-POST   /api/auth/logout/             # 用户登出（Token黑名单）
-GET    /api/auth/profile/            # 获取当前用户信息
-PUT    /api/auth/profile/            # 更新用户信息
-PUT    /api/auth/change-password/    # 修改密码
+- `python manage.py security_smoke_test`
+  - 对部分核心接口（学生/教师/管理员端）做最小 SQL 注入 / XSS 冒烟测试。
+  - 验证未登录访问是否被正确拒绝，以及常见恶意载荷不会导致 5xx 服务器错误。
 
-# 用户管理
-GET    /api/auth/users/              # 用户列表（支持搜索、筛选、分页）
-GET    /api/auth/users/{user_id}/    # 用户详情
+> 当前各 app 下的 `tests.py` 文件主要作为后续单元测试的预留位置，**暂未系统性编写 `TestCase`**；现阶段主要依赖上述管理命令、`scripts/api_smoke_test.py` 以及手工端到端测试。
 
-# 辅助接口
-GET    /api/auth/check-username/     # 检查用户名可用性
-GET    /api/auth/check-email/        # 检查邮箱可用性
-```
+---
 
-### 学生端 (`/api/student/`) ✅ 已实现
+## 📡 API 路由与文档来源
 
-```
-GET    /api/student/positions/              # 浏览岗位列表
-GET    /api/student/positions/{id}/         # 岗位详情
-POST   /api/student/applications/submit/    # 投递申请（在线填写 或 上传文件，二选一）
-GET    /api/student/applications/           # 我的申请
-GET    /api/student/dashboard/              # 学生看板
-```
+> 说明：本文件仅给出模块级概览，**详细接口列表与字段说明以 `docs/api.md` 为唯一权威来源**。
 
-### 教师端 (`/api/faculty/`) ✅ 已实现
+- 认证与用户：`/api/auth/`
+- 学生端：`/api/student/`
+- 教师端：`/api/faculty/`
+- 助教端：`/api/ta/`
+- 通知模块：`/api/notifications/`
+- 管理端统计与报表：`/api/admin/`
 
-```
-GET    /api/faculty/positions/                     # 我的岗位（筛选/搜索/排序）
-POST   /api/faculty/positions/                     # 创建岗位
-PUT    /api/faculty/positions/{id}/                # 编辑岗位
-PATCH  /api/faculty/positions/{id}/close/          # 关闭岗位
-GET    /api/faculty/positions/{id}/applications/   # 岗位的申请列表
-POST   /api/faculty/applications/{id}/review/      # 审核申请（accept/reject）
-POST   /api/faculty/applications/{id}/revoke/      # 撤销审核（恢复reviewing，录用名额回退）
-GET    /api/faculty/timesheets/                    # 查看助教工时列表
-GET    /api/faculty/timesheets/{id}/               # 工时详情（仅限当前教师岗位）
-POST   /api/faculty/timesheets/{id}/review/        # 审核工时（approve/reject）
-GET    /api/faculty/dashboard/                     # 教师看板
-```
+如需查看完整接口定义（包含请求/响应字段、示例），请参见：`docs/api.md`。
 
-### 助教端 (`/api/ta/`)
-
-```
-POST   /api/ta/timesheets/                    # 提交工时
-GET    /api/ta/timesheets/                    # 我的工时（筛选/分页）
-PUT    /api/ta/timesheets/{id}/               # 编辑工时（待审核状态）
-GET    /api/ta/timesheets/{id}/               # 工时详情
-GET    /api/ta/salaries/                      # 薪酬记录列表
-GET    /api/ta/salaries/{id}/                 # 薪酬详情
-GET    /api/ta/dashboard/                     # 助教看板
-```
+---
 
 ### 管理员端
 

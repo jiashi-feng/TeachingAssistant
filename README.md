@@ -289,7 +289,7 @@ TeachingAssistant/
 ├── Design.md                          # 系统设计文档 ✅
 ├── DATABASE_DESIGN.md                 # 数据库设计文档 ✅
 ├── README.md                          # 项目主说明
-├── TODO.md                            # 开发任务清单 ✅进度≈50%
+├── TODO.md                            # 开发任务清单 ✅进度≈70%
 └── PROJECT_STRUCTURE.md               # 项目结构详解
 ```
 
@@ -312,14 +312,14 @@ TeachingAssistant/
   - 9个权限控制类（角色权限、对象权限、动态权限）
   - RBAC权限系统完全实现
 
-- ✅ **第四阶段（部分）：管理员端开发** (2025-10-16完成)
+- ✅ **第四阶段：核心业务 API 与管理员端开发** (2025-10-16完成)
   - Django Admin后台优化（统计看板、布局优化）
   - 用户管理功能（创建、编辑、删除）
-  - 数据统计看板（用户、岗位、申请、薪酬统计）
-  - 薪酬管理自动化（选择工时自动计算金额、生成流水号、支付方式下拉）
+  - 学生/教师/助教端核心业务 API（岗位、申请、工时、薪酬、通知）
+  - 薪酬管理自动化（选择工时自动计算金额、生成流水号、支付方式下拉，计算明细本地化为中文）
   - 修复统计口径（待审核申请、月度薪酬按工时月份统计）
 
-- ✅ **第五阶段（部分）：前端开发** (2025-10-16完成)
+- ✅ **第五阶段：前端开发** (2025-10-16完成)
   - Vue 3 + Vite 项目架构
   - 用户登录/注册页面（完整表单验证）
   - 基于角色的路由系统（学生/教师/助教）
@@ -327,21 +327,24 @@ TeachingAssistant/
   - 学生/教师/助教看板页面
   - 响应式布局组件
 
-- 🟦 **进行中**：核心业务API和页面开发（本次更新：学生端岗位/申请、教师端审核详情、通知中心、薪酬自动化已完成）
-  - 岗位管理（教师端）
-  - 申请流程（学生端）✅ 已完成基础闭环（浏览→投递→审核）
-  - 工时管理（助教端）
-
-### ✅ 2026-02 阶段性完成（本次更新）
-
-- **管理端增强**
-  - 月度报表导出（CSV）：`GET /api/admin/reports/export/`
-  - 历史趋势 API：`GET /api/admin/reports/trends/`
-  - Admin 内趋势图表页：`GET /admin/reports/trends/`
-- **师生互动亮点**
-  - 聊天模型与API：`/api/chat/*`
-  - 前端聊天页面：`/student/chat`、`/faculty/chat`
-  - 学生可直接从岗位详情页发起会话联系教师
+- ✅ **当前状态（截至 2026-02）**
+  - 核心业务 API 与三端页面（学生/教师/助教）全部完成并接入。
+  - 管理端增强：
+    - 月度报表导出（CSV）：`GET /api/admin/reports/export/`
+    - 历史趋势 API：`GET /api/admin/reports/trends/`
+    - Admin 内趋势图表页：`GET /admin/reports/trends/`
+  - 师生互动亮点：
+    - 聊天模型与API：`/api/chat/*`
+    - 前端聊天页面：`/student/chat`、`/faculty/chat`
+    - 学生可直接从岗位详情页发起会话联系教师
+  - 安全与性能加固：
+    - 配置 CSRF 可信域名（`CSRF_TRUSTED_ORIGINS`），后端接口默认 JWT+Session 双认证。
+    - 管理端数据看板的月度报表与趋势接口增加缓存，降低数据库压力。
+    - 新增最小安全自检命令：`python manage.py security_smoke_test`（SQL 注入 / XSS 冒烟）。
+  - 测试与文档：
+    - 新增后端 API 冒烟脚本：`python scripts/api_smoke_test.py`，一键验证主要角色与核心接口。
+    - 补充测试方案文档：`docs/testing-plan.md`。
+    - 补充权威接口文档：`docs/api.md`，并在 README 中统一指向该文件。
 
 ---
 
@@ -499,70 +502,14 @@ python manage.py create_test_data
 
 ## 📡 API文档
 
-详细API文档请参考：
-- [后端API说明](backend/README.md)
-- [API接口文档](docs/api.md)
+本项目的详细 API 文档采用“单一权威来源”的方式维护：
 
-### 核心接口示例（本次新增 ✅）
+- **唯一权威来源**：`docs/api.md`（包含所有后端接口的路径、方法、请求/响应字段与示例）。
+- 概览性说明：
+  - 根目录 `README.md`：只描述整体架构和少量核心接口示例。
+  - `backend/README.md`：只描述后端模块结构与路由大类，不再重复逐条接口清单。
 
-#### 认证相关（已实现）✅
-
-```
-POST   /api/auth/register/          # 用户注册
-POST   /api/auth/login/             # 用户登录
-POST   /api/auth/logout/            # 用户登出
-GET    /api/auth/profile/           # 获取用户信息
-PUT    /api/auth/profile/           # 更新用户信息
-PUT    /api/auth/change-password/   # 修改密码
-GET    /api/auth/users/             # 用户列表（管理员）
-POST   /api/auth/token/             # 获取Token
-POST   /api/auth/token/refresh/     # 刷新Token
-```
-
-#### 学生端
-
-```
-GET    /api/student/positions/                 # 浏览岗位列表（支持搜索/筛选/排序）
-GET    /api/student/positions/{id}/            # 岗位详情
-POST   /api/student/applications/submit/       # 投递申请（在线填写 或 上传文件）
-GET    /api/student/applications/              # 我的申请列表
-GET    /api/student/applications/{id}/         # 申请详情
-```
-
-#### 教师端
-
-```
-GET    /api/faculty/positions/                      # 我的岗位列表（筛选/排序）
-POST   /api/faculty/positions/                      # 创建岗位
-PUT    /api/faculty/positions/{id}/                 # 编辑岗位
-PATCH  /api/faculty/positions/{id}/close/           # 关闭岗位
-GET    /api/faculty/positions/{id}/applications/    # 岗位申请列表
-POST   /api/faculty/applications/{id}/review/       # 审核申请（accept/reject），录用将递增 num_filled（防超额）
-POST   /api/faculty/applications/{id}/revoke/       # 撤销审核（恢复 reviewing，已录用会回退名额）
-GET    /api/faculty/timesheets/                     # 查看助教工时列表
-GET    /api/faculty/timesheets/{id}/                # 工时详情（仅限当前教师岗位）
-```
-
-#### 师生聊天（新增）✅
-
-```
-GET    /api/chat/conversations/                          # 会话列表
-POST   /api/chat/start/                                  # 发起会话（position_id/application_id/timesheet_id）
-GET    /api/chat/conversations/{conversation_id}/messages/ # 消息列表
-POST   /api/chat/conversations/{conversation_id}/send/     # 发送消息
-```
-
-#### 助教端
-
-```
-POST   /api/ta/timesheets/                    # 提交工时
-GET    /api/ta/timesheets/                    # 我的工时列表（筛选、分页）
-PUT    /api/ta/timesheets/{id}/               # 编辑工时（待审核状态）
-GET    /api/ta/timesheets/{id}/               # 工时详情
-GET    /api/ta/salaries/                      # 查看薪酬列表
-GET    /api/ta/salaries/{id}/                 # 薪酬详情
-GET    /api/ta/dashboard/                     # 助教数据看板
-```
+如需查阅具体接口，请直接查看：`docs/api.md`。
 
 ---
 

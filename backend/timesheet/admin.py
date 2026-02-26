@@ -157,9 +157,9 @@ class SalaryAdminForm(forms.ModelForm):
 
         amount = timesheet.calculate_salary()
         details = {
-            'hours': float(timesheet.hours_worked),
-            'rate': float(timesheet.position.hourly_rate),
-            'formula': f'{timesheet.hours_worked} × {timesheet.position.hourly_rate}',
+            '工时（小时）': float(timesheet.hours_worked),
+            '时薪（元/小时）': float(timesheet.position.hourly_rate),
+            '计算公式': f'{timesheet.hours_worked} × {timesheet.position.hourly_rate}',
         }
 
         cleaned_data['amount'] = amount
@@ -182,7 +182,7 @@ class SalaryAdmin(admin.ModelAdmin):
     form = SalaryAdminForm
     
     class Media:
-        js = ('js/salary_admin.js',)
+        js = ('timesheet/js/salary_admin.js',)
 
     list_display = [
         'salary_id', 'get_ta_name', 'get_month',
@@ -273,9 +273,9 @@ class SalaryAdmin(admin.ModelAdmin):
 
         amount = timesheet.calculate_salary()
         details = {
-            'hours': float(timesheet.hours_worked),
-            'rate': float(timesheet.position.hourly_rate),
-            'formula': f'{timesheet.hours_worked} × {timesheet.position.hourly_rate}',
+            '工时（小时）': float(timesheet.hours_worked),
+            '时薪（元/小时）': float(timesheet.position.hourly_rate),
+            '计算公式': f'{timesheet.hours_worked} × {timesheet.position.hourly_rate}',
         }
         return JsonResponse({
             'amount': str(amount),
