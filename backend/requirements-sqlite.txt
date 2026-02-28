@@ -1,0 +1,14 @@
+# 仅使用 SQLite 时的依赖（无需 MySQL，适用于 PythonAnywhere 免费版等）
+# 使用：pip install -r requirements-sqlite.txt
+# 并设置环境变量 USE_SQLITE=True
+
+Django==4.2.7
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.0
+django-cors-headers==4.3.0
+django-filter==23.5
+Pillow==10.1.0
+python-dateutil==2.8.2
+APScheduler==3.10.1
+python-dotenv==1.0.1
+django-jazzmin==2.6.0

@@ -16,10 +16,12 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# 加载环境变量 (.env 文件位于项目根目录，即backend的上一级目录)
+# 加载环境变量 (.env 文件位于项目根目录，即 backend 的上一级目录)
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
+# 区分运行环境：PythonAnywhere 服务器会在环境中设置 PYTHONANYWHERE_DOMAIN
+IS_PYTHONANYWHERE = 'PYTHONANYWHERE_DOMAIN' in os.environ
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -28,15 +30,33 @@ load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 SECRET_KEY = os.getenv('SECRET_KEY', '!@c4k@1*tx#405@24y324#&xym^r_r&i=z25c1r!jbs5w#!l5&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+if IS_PYTHONANYWHERE:
+    DEBUG = os.getenv('DEBUG', 'False').strip().lower() in ('1', 'true', 'yes')
+else:
+    DEBUG = os.getenv('DEBUG', 'True').strip().lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# 允许访问的域名
+if IS_PYTHONANYWHERE:
+    _pa_domain = os.environ.get('PYTHONANYWHERE_DOMAIN', '')
+    if os.getenv('ALLOWED_HOSTS'):
+        ALLOWED_HOSTS = [s.strip() for s in os.getenv('ALLOWED_HOSTS', '').split(',') if s.strip()]
+    else:
+        ALLOWED_HOSTS = []
+    if not ALLOWED_HOSTS:
+        ALLOWED_HOSTS = [_pa_domain] if _pa_domain else ['localhost']
+else:
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# CSRF 可信任域名（前端域名列表，逗号分隔）
-CSRF_TRUSTED_ORIGINS = os.getenv(
-    'CSRF_TRUSTED_ORIGINS',
-    'http://localhost:5173,http://127.0.0.1:5173'
-).split(',')
+# CSRF 可信任域名（前端/API 域名列表，逗号分隔）
+if IS_PYTHONANYWHERE:
+    _pa_domain = os.environ.get('PYTHONANYWHERE_DOMAIN', '')
+    _default_csrf = f'https://{_pa_domain}' if _pa_domain else 'https://localhost'
+    CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', _default_csrf).split(',')
+else:
+    CSRF_TRUSTED_ORIGINS = os.getenv(
+        'CSRF_TRUSTED_ORIGINS',
+        'http://localhost:5173,http://127.0.0.1:5173'
+    ).split(',')
 
 
 # Application definition
@@ -104,21 +124,45 @@ WSGI_APPLICATION = 'TeachingAssistant.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'teaching_assistant_db'),
-        'USER': os.getenv('DB_USER', 'ta_admin'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'your_password_here'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '3306'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+# 服务器环境（PythonAnywhere）：免费版仅支持 SQLite，无需额外配置
+# 本地环境：由环境变量 USE_SQLITE 或 DB_* 决定用 SQLite 还是 MySQL
+if IS_PYTHONANYWHERE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            'OPTIONS': {
+                'timeout': 20,  # 等待锁定的秒数，减少并发时的 "database is locked"
+            }
         }
     }
-}
+else:
+    _use_sqlite = os.getenv('USE_SQLITE', '').strip().lower() in ('1', 'true', 'yes')
+    if _use_sqlite:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+                'OPTIONS': {
+                    'timeout': 20,
+                }
+            }
+        }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': os.getenv('DB_NAME', 'teaching_assistant_db'),
+                'USER': os.getenv('DB_USER', 'ta_admin'),
+                'PASSWORD': os.getenv('DB_PASSWORD', 'your_password_here'),
+                'HOST': os.getenv('DB_HOST', 'localhost'),
+                'PORT': os.getenv('DB_PORT', '3306'),
+                'OPTIONS': {
+                    'charset': 'utf8mb4',
+                    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                }
+            }
+        }
 
 
 # Password validation
@@ -154,7 +198,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False  # 关闭时区支持，避免MySQL时区问题
+USE_TZ = False  # 关闭时区支持，与 SQLite/MySQL 行为一致，避免时区歧义
 
 
 # Static files (CSS, JavaScript, Images)
