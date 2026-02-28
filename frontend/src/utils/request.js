@@ -9,11 +9,14 @@ import router from '@/router'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: '/api', // 通过Vite代理转发到后端
+  baseURL: '/api', // 部署时与后端同域，通过 /api 访问
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json',
   },
+  // CSRF 配置：从 csrftoken Cookie 读取并自动添加到 X-CSRFToken 请求头
+  xsrfCookieName: 'csrftoken',
+  xsrfHeaderName: 'X-CSRFToken',
 })
 
 // 请求拦截器

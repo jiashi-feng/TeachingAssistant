@@ -3,7 +3,6 @@
 """
 
 from django.urls import path
-from django.views.decorators.csrf import csrf_exempt
 from .views import (
     # JWT Token
     CustomTokenObtainPairView,
@@ -15,6 +14,7 @@ from .views import (
     LogoutView,
     ProfileView,
     ChangePasswordView,
+    CsrfCookieView,
     
     # 用户管理
     UserListView,
@@ -32,15 +32,16 @@ urlpatterns = [
     # ==============================================================================
     # JWT Token相关
     # ==============================================================================
-    path('token/', csrf_exempt(CustomTokenObtainPairView.as_view()), name='token_obtain_pair'),
-    path('token/refresh/', csrf_exempt(CustomTokenRefreshView.as_view()), name='token_refresh'),
+    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     
     # ==============================================================================
     # 用户认证
     # ==============================================================================
-    path('register/', csrf_exempt(RegisterView.as_view()), name='register'),
-    path('login/', csrf_exempt(LoginView.as_view()), name='login'),
-    path('logout/', csrf_exempt(LogoutView.as_view()), name='logout'),
+    path('csrf/', CsrfCookieView.as_view(), name='csrf'),
+    path('register/', RegisterView.as_view(), name='register'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     
@@ -57,4 +58,3 @@ urlpatterns = [
     path('check-email/', CheckEmailView.as_view(), name='check_email'),
     path('check-user-id/', CheckUserIdView.as_view(), name='check_user_id'),
 ]
-

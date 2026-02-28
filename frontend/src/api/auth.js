@@ -4,9 +4,18 @@
 
 import request from '@/utils/request'
 
+// 获取并设置 CSRF Cookie（若已存在则只是一次普通 GET）
+function ensureCsrf() {
+  return request({
+    url: '/auth/csrf/',
+    method: 'get',
+  })
+}
+
 export default {
   // 用户登录
-  login(data) {
+  async login(data) {
+    await ensureCsrf()
     return request({
       url: '/auth/login/',
       method: 'post',
@@ -15,7 +24,8 @@ export default {
   },
 
   // 用户注册
-  register(data) {
+  async register(data) {
+    await ensureCsrf()
     return request({
       url: '/auth/register/',
       method: 'post',
@@ -24,7 +34,8 @@ export default {
   },
 
   // 用户登出
-  logout(data) {
+  async logout(data) {
+    await ensureCsrf()
     return request({
       url: '/auth/logout/',
       method: 'post',
@@ -64,7 +75,8 @@ export default {
   },
 
   // 修改密码
-  changePassword(data) {
+  async changePassword(data) {
+    await ensureCsrf()
     return request({
       url: '/auth/change-password/',
       method: 'put',
@@ -99,7 +111,8 @@ export default {
     })
   },
   // 刷新Token
-  refreshToken(refresh) {
+  async refreshToken(refresh) {
+    await ensureCsrf()
     return request({
       url: '/auth/token/refresh/',
       method: 'post',
