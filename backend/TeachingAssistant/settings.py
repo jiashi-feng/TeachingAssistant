@@ -94,7 +94,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'TeachingAssistant.middleware.ApiCsrfExemptMiddleware',  # 对 /api/ 豁免 CSRF
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -294,13 +294,19 @@ SIMPLE_JWT = {
 # CORS跨域配置
 # ==============================================================================
 
-# 允许的源（开发环境）
+# 允许的源（开发 + 生产）
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',     # Vite默认端口
     'http://localhost:8080',     # Vue CLI默认端口
     'http://127.0.0.1:5173',
     'http://127.0.0.1:8080',
 ]
+# 生产环境：将 ALLOWED_HOSTS 中的域名加入 CORS（前后端同域时可选，但无害）
+if not DEBUG and ALLOWED_HOSTS:
+    for h in ALLOWED_HOSTS:
+        if h and h not in ('localhost', '127.0.0.1') and '*' not in h:
+            CORS_ALLOWED_ORIGINS.extend([f'https://{h}', f'http://{h}'])
+            break
 
 # CORS相关配置
 CORS_ALLOW_CREDENTIALS = True  # 允许携带Cookie
@@ -354,8 +360,8 @@ JAZZMIN_SETTINGS = {
     # 搜索模型（在顶部搜索框中可搜索的模型）
     "search_model": ["accounts.User", "recruitment.Position", "application.Application"],
     
-    # 用户头像字段
-    "user_avatar": "avatar",
+    # 用户头像字段（User 有 avatar ImageField，但 Jazzmin 部分版本需 callable；设为 None 可避免报错）
+    "user_avatar": None,
     
     # 顶部链接
     "topmenu_links": [
