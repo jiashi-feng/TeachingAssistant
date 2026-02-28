@@ -4,6 +4,8 @@
 实现用户注册、登录、登出、个人信息管理等功能
 """
 
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -30,6 +32,7 @@ from .serializers import (
 # JWT Token 视图
 # ==============================================================================
 
+@method_decorator(csrf_exempt, name='dispatch')
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
     自定义JWT Token获取视图
@@ -39,6 +42,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class CustomTokenRefreshView(TokenRefreshView):
     """
     JWT Token刷新视图
@@ -51,6 +55,7 @@ class CustomTokenRefreshView(TokenRefreshView):
 # 用户认证视图
 # ==============================================================================
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterView(APIView):
     """
     用户注册接口
@@ -84,6 +89,7 @@ class RegisterView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     """
     用户登录接口
