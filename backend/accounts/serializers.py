@@ -319,28 +319,44 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    """用户登录序列化器"""
-    username = serializers.CharField(help_text='用户名')
+    """用户登录序列化器，支持使用用户名或邮箱登录"""
+    username = serializers.CharField(help_text='用户名或邮箱')
     password = serializers.CharField(
         write_only=True,
         style={'input_type': 'password'}
     )
-    
+
+    def _get_user_for_login(self, username_or_email, password):
+        """根据用户名或邮箱查找用户并验证密码，返回 User 或 None"""
+        if not username_or_email or not password:
+            return None
+        # 若包含 @ 则按邮箱查找
+        if '@' in username_or_email:
+            try:
+                user = User.objects.get(email__iexact=username_or_email.strip())
+                if user.check_password(password):
+                    return user
+                return None
+            except User.DoesNotExist:
+                return None
+        # 否则按用户名认证（Django 默认行为）
+        return authenticate(username=username_or_email, password=password)
+
     def validate(self, data):
-        """验证用户名和密码"""
-        username = data.get('username')
+        """验证用户名/邮箱和密码"""
+        username_or_email = (data.get('username') or '').strip()
         password = data.get('password')
-        
-        if username and password:
-            user = authenticate(username=username, password=password)
-            if user is None:
-                raise serializers.ValidationError('用户名或密码错误')
-            if not user.is_active:
-                raise serializers.ValidationError('该账号已被禁用')
-            data['user'] = user
-        else:
-            raise serializers.ValidationError('必须提供用户名和密码')
-        
+
+        if not username_or_email or not password:
+            raise serializers.ValidationError('请输入用户名或邮箱以及密码')
+
+        user = self._get_user_for_login(username_or_email, password)
+        if user is None:
+            raise serializers.ValidationError('用户名/邮箱或密码错误')
+        if not user.is_active:
+            raise serializers.ValidationError('该账号已被禁用')
+
+        data['user'] = user
         return data
 
 
