@@ -200,8 +200,9 @@ export const useUserStore = defineStore('user', () => {
     const userRoleCodes = roleCodes.value
 
     if (userRoleCodes.includes('admin')) {
-      // 管理员跳转到Django Admin后台
-      window.location.href = 'http://localhost:8000/admin/'
+      // 管理员跳转到当前站点的 Django Admin 后台（本地/PA 均适用）
+      const adminUrl = `${window.location.origin}/admin/`
+      window.location.href = adminUrl
     } else if (userRoleCodes.includes('faculty')) {
       // 教师跳转到教师看板
       router.push('/faculty/dashboard')

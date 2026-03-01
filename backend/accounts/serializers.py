@@ -83,9 +83,9 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['user_id', 'date_joined', 'last_login', 'created_at']
     
     def get_roles(self, obj):
-        """获取用户的所有角色（完整对象数组）"""
+        """获取用户的所有角色（完整对象数组）。Django 后台用户(is_staff/is_superuser)视为拥有 admin 角色以便前端跳转管理后台。"""
         user_roles = UserRole.objects.filter(user=obj).select_related('role')
-        return [
+        roles_list = [
             {
                 'role_id': ur.role.role_id,
                 'role_code': ur.role.role_code,
@@ -94,6 +94,15 @@ class UserSerializer(serializers.ModelSerializer):
             }
             for ur in user_roles
         ]
+        role_codes = {r['role_code'] for r in roles_list}
+        if (getattr(obj, 'is_staff', False) or getattr(obj, 'is_superuser', False)) and 'admin' not in role_codes:
+            roles_list.append({
+                'role_id': None,
+                'role_code': 'admin',
+                'role_name': '管理员',
+                'is_primary': False
+            })
+        return roles_list
     
     def get_permissions(self, obj):
         """获取用户的所有权限"""

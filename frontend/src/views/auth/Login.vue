@@ -133,10 +133,11 @@ const handleLogin = async () => {
       
       
       if (roleCodes.includes('admin')) {
-        // 管理员跳转到Django Admin后台
+        // 管理员跳转到当前站点的 Django Admin 后台（本地/PA 均适用）
         ElMessage.success('正在跳转到管理后台...')
+        const adminUrl = `${window.location.origin}/admin/`
         setTimeout(() => {
-          window.location.href = 'http://localhost:8000/admin/'
+          window.location.href = adminUrl
         }, 1000)
       } else if (roleCodes.includes('faculty')) {
         // 教师跳转到教师看板
