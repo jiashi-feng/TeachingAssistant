@@ -101,9 +101,13 @@
             console.error('清除存储时出错:', e);
         }
         
-        // 1.5秒后跳转到前端登录页
+        // 1.5秒后跳转到当前站点的前端登录页（部署与本地均适用）
         setTimeout(function() {
-            window.location.href = 'http://localhost:5173/login?logout=true';
+            var origin = window.location.origin;
+            var loginPath = origin.indexOf('localhost') !== -1 && origin.indexOf('8000') !== -1
+                ? 'http://localhost:5173/#/login?logout=true'  // 本地开发：后端8000，前端5173
+                : origin + '/#/login?logout=true';             // 部署或同域：与当前站点一致
+            window.location.href = loginPath;
         }, 1500);
     </script>
 </body>
