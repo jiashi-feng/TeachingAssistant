@@ -11,6 +11,7 @@ import router from '@/router'
 const service = axios.create({
   baseURL: '/api', // 部署时与后端同域，通过 /api 访问
   timeout: 10000, // 请求超时时间
+  withCredentials: true, // 同域下也明确携带/接收 Cookie（CSRF 依赖）
   headers: {
     'Content-Type': 'application/json',
   },

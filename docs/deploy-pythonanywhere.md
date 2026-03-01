@@ -250,7 +250,8 @@ python manage.py createsuperuser
 当前后端已可在 `https://yourusername.pythonanywhere.com` 提供 API 和 Admin。若要把 Vue 前端也部署上去：
 
 1. 本地在 `frontend` 目录执行 `npm run build`，得到 `dist/`
-2. 将 `dist/` 内所有文件上传到 PA 的某个静态目录，并在 **Static files** 中把 `/` 映射到该目录；**或**
-3. 将前端部署到 Vercel/Netlify 等，把前端访问的 API 地址改为 `https://yourusername.pythonanywhere.com/api`，并在后端 `ALLOWED_HOSTS`、`CSRF_TRUSTED_ORIGINS`、CORS 中加上前端域名
+2. 将 **新的** `dist/` 内所有文件上传到 PA，覆盖原有前端静态文件。**若只更新了后端（如 git pull）而未重新构建并上传前端，浏览器仍会加载旧版 JS，登录可能一直报「CSRF token missing」。**
+3. 在 PA 的 **Static files** 中把 `/` 映射到该静态目录；**或**
+4. 将前端部署到 Vercel/Netlify 等，把前端访问的 API 地址改为 `https://yourusername.pythonanywhere.com/api`，并在后端 `ALLOWED_HOSTS`、`CSRF_TRUSTED_ORIGINS`、CORS 中加上前端域名
 
 完成以上步骤后，即可在浏览器中通过 `https://yourusername.pythonanywhere.com` 访问你的站点（至少 Admin 与 API 可用）。

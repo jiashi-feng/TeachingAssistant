@@ -4,8 +4,8 @@
 
 import request from '@/utils/request'
 
-// 获取并设置 CSRF Cookie（若已存在则只是一次普通 GET）
-function ensureCsrf() {
+// 获取并设置 CSRF Cookie（若已存在则只是一次普通 GET），供入口或登录前调用
+export function ensureCsrf() {
   return request({
     url: '/auth/csrf/',
     method: 'get',
