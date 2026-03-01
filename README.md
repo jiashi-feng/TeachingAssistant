@@ -282,9 +282,13 @@ TeachingAssistant/
 │   ├── vite.config.js                 # Vite构建配置 ✅
 │   └── README.md                      # 前端说明
 │
-├── docs/                              # 项目文档（待完善）
-│   ├── api.md                         # API接口文档
-│   └── deployment.md                  # 部署文档
+├── docs/                              # 项目文档
+│   ├── api.md                         # API 接口文档（权威）
+│   ├── database.md                    # 数据库文档
+│   ├── deployment.md                  # 部署总览
+│   ├── deploy-pythonanywhere.md       # PythonAnywhere 部署清单
+│   ├── developer-guide.md             # 开发者指南
+│   └── testing-plan.md               # 测试方案
 │
 ├── Design.md                          # 系统设计文档 ✅
 ├── DATABASE_DESIGN.md                 # 数据库设计文档 ✅
@@ -469,7 +473,7 @@ python manage.py create_test_data
 - `Conversation` - 会话（师生聊天）
 - `Message` - 消息（师生聊天）
 
-详细设计请参考：[DATABASE_DESIGN.md](DATABASE_DESIGN.md)
+详细设计请参考：[docs/database.md](docs/database.md)
 
 ---
 
@@ -496,46 +500,29 @@ python manage.py create_test_data
 
 ### 开发流程
 
-详细的开发任务清单请参考：[TODO.md](TODO.md)
+- 开发任务清单：[TODO.md](TODO.md)
+- 本地环境与规范：[docs/developer-guide.md](docs/developer-guide.md)
 
 ---
 
-## 📡 API文档
+## 📡 文档索引
 
-本项目的详细 API 文档采用“单一权威来源”的方式维护：
+| 文档 | 说明 |
+|------|------|
+| [docs/api.md](docs/api.md) | **API 接口文档（权威）**：所有后端接口路径、方法、请求/响应 |
+| [docs/database.md](docs/database.md) | 数据库表结构概览与维护说明 |
+| [docs/deployment.md](docs/deployment.md) | 部署总览；[deploy-pythonanywhere.md](docs/deploy-pythonanywhere.md) 为 PA 详细清单 |
+| [docs/developer-guide.md](docs/developer-guide.md) | 开发者指南：本地环境、规范、常用命令 |
+| [docs/testing-plan.md](docs/testing-plan.md) | 测试方案与用例说明 |
 
-- **唯一权威来源**：`docs/api.md`（包含所有后端接口的路径、方法、请求/响应字段与示例）。
-- 概览性说明：
-  - 根目录 `README.md`：只描述整体架构和少量核心接口示例。
-  - `backend/README.md`：只描述后端模块结构与路由大类，不再重复逐条接口清单。
-
-如需查阅具体接口，请直接查看：`docs/api.md`。
+根目录 `README.md` 与 `backend/README.md` 仅保留架构与模块概览，具体接口以 `docs/api.md` 为准。
 
 ---
 
 ## 🌐 部署指南
 
-详细部署文档请参考：[docs/deployment.md](docs/deployment.md)
-
-### PythonAnywhere部署
-
-1. 上传代码到服务器
-2. 配置虚拟环境
-3. 安装依赖：`pip install -r requirements.txt`
-4. 配置MySQL数据库
-5. 收集静态文件：`python manage.py collectstatic`
-6. 配置WSGI文件
-
-### 生产环境配置
-
-```python
-# backend/TeachingAssistant/settings.py
-DEBUG = False
-ALLOWED_HOSTS = ['yourdomain.com']
-
-# 使用环境变量
-SECRET_KEY = os.environ.get('SECRET_KEY')
-```
+- **部署总览与 PythonAnywhere 详细步骤**：[docs/deployment.md](docs/deployment.md) / [docs/deploy-pythonanywhere.md](docs/deploy-pythonanywhere.md)
+- 生产环境需设置 `DEBUG=False`、`SECRET_KEY`、`ALLOWED_HOSTS`、`CSRF_TRUSTED_ORIGINS`；免费 PA 推荐使用 SQLite（`USE_SQLITE=True`）。
 
 ---
 
@@ -580,12 +567,10 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 
 ## 📈 项目统计
 
-- **总进度**：46.4% (26/56 任务完成)
-- **代码行数**：10,000+ 行
-- **后端模型**：13个数据表
-- **API接口**：12个认证接口 + 更多业务接口开发中
-- **前端页面**：10+ 个组件
-- **开发周期**：3天（2025-10-14 至 2025-10-16）
+- **总进度**：见 [TODO.md](TODO.md) 进度追踪
+- **后端**：Django 多应用（accounts、recruitment、application、timesheet、notifications、messaging）；支持 MySQL / SQLite
+- **前端**：Vue 3 + Vite + Element Plus；学生/教师/助教/管理员多角色
+- **文档**：API、数据库、部署、开发者指南、测试方案已归档于 `docs/`
 
 ## ✨ 已完成功能亮点
 

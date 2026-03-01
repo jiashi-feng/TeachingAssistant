@@ -1,15 +1,24 @@
-# Django后端 - 学生助教管理平台
+# Django 后端 - 学生助教管理平台
 
-> Django + Django REST Framework 后端API服务
+> Django + Django REST Framework 后端 API 服务；支持 MySQL / SQLite（通过环境变量切换）。
 
 ## 📋 技术栈
 
-- **Django 3.2+** - Python Web框架
-- **Django REST Framework** - RESTful API框架
-- **Simple JWT** - JWT认证
-- **MySQL 8.0** - 关系型数据库
-- **django-cors-headers** - CORS跨域支持
-- **django-filter** - API过滤
+- **Django 3.2+** - Python Web 框架
+- **Django REST Framework** - RESTful API
+- **Simple JWT** - JWT 认证
+- **MySQL 8.0 / SQLite** - 数据库（生产可用 SQLite，见 [部署文档](../docs/deployment.md)）
+- **django-cors-headers** - CORS
+- **django-filter** - 过滤与搜索
+
+## 📚 文档索引
+
+| 文档                                                  | 说明                     |
+| ----------------------------------------------------- | ------------------------ |
+| [docs/api.md](../docs/api.md)                         | **API 接口定义（权威）** |
+| [docs/database.md](../docs/database.md)               | 数据库表结构概览         |
+| [docs/deployment.md](../docs/deployment.md)           | 部署总览与 PA 清单       |
+| [docs/developer-guide.md](../docs/developer-guide.md) | 本地环境与常用命令       |
 
 ---
 
@@ -54,8 +63,9 @@ backend/
 │   ├── models.py           # Timesheet/Salary模型（含支付信息、流水号）✅
 │   ├── serializers.py      # 工时/薪酬序列化器（助教、教师、管理员）
 │   ├── views.py            # 工时提交、列表、详情、审核、薪酬API
-│   ├── admin.py            # Admin后台配置（自动计算薪酬、支付信息表单）
-│   ├── signals.py          # 工时提交/审核通知
+│   ├── admin.py            # Admin 后台（自动计算薪酬、支付信息）✅
+│   ├── signals.py          # 工时提交/审核通知 ✅
+│   ├── static/timesheet/js/salary_admin.js  # Admin 薪酬表单联动 ✅
 │   ├── urls.py
 │   └── tests.py
 │
@@ -69,16 +79,20 @@ backend/
 │   ├── urls.py
 │   └── tests.py
 │
-├── dashboard/              # 数据看板模块（管理员端）✅部分完成
-│   ├── migrations/
-│   ├── models.py
-│   ├── admin.py            # 自定义Admin站点 ✅
-│   ├── admin_views.py      # Admin统计数据视图 ✅
-│   ├── context_processors.py
-│   ├── views.py            # 统计数据API
+├── dashboard/              # 数据看板与报表（管理员端）✅
+│   ├── admin.py            # 自定义 Admin 站点 ✅
+│   ├── admin_views.py      # Admin 统计与趋势视图 ✅
+│   ├── admin_trends.py     # Admin 趋势分析页（图表+表格）✅
+│   ├── views.py            # 月度报表导出、趋势 API ✅
+│   ├── urls.py
+│   └── ...
+│
+├── messaging/              # 师生聊天模块 ✅
+│   ├── models.py           # Conversation / Message ✅
+│   ├── views.py            # 会话与消息 API ✅
 │   ├── serializers.py
 │   ├── urls.py
-│   └── tests.py
+│   └── admin.py
 │
 ├── TeachingAssistant/      # Django项目配置
 │   ├── settings.py         # 核心配置文件 ✅已完成配置
@@ -96,8 +110,10 @@ backend/
 │
 ├── static/                 # 开发环境静态文件
 ├── templates/              # 模板文件
-│   └── admin/              # Django Admin自定义模板 ✅
-│       └── index.html      # 优化的Admin首页 ✅
+│   ├── admin/              # Django Admin 自定义模板 ✅
+│   │   ├── index.html      # Admin 首页看板 ✅
+│   │   └── trends.html     # Admin 趋势分析页 ✅
+│   └── logout_cleanup.html # 登出后跳转前端登录页 ✅
 ├── manage.py               # Django管理脚本
 └── requirements.txt        # Python依赖 ✅已完成
 ```
@@ -133,7 +149,7 @@ backend/
   - 快捷操作按钮优化（创建用户、岗位、审核申请）
   - 用户管理功能（13个模型的Admin配置）
 
-**当前进度：≈50%（核心流程贯通 + 管理后台自动化完成） | 新增：教师工时详情、薪酬自动计算、支付信息优化**
+**当前状态**：核心认证、岗位/申请/工时/薪酬/通知/聊天、管理端报表与趋势、Admin 优化与薪酬联动均已完成；测试与部署见 [docs/testing-plan.md](../docs/testing-plan.md)、[docs/deployment.md](../docs/deployment.md)。
 
 ---
 
@@ -158,27 +174,8 @@ pip install -r requirements.txt
 
 ### 2. 配置数据库
 
-```bash
-# 创建MySQL数据库
-mysql -u root -p
-CREATE DATABASE teaching_assistant_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-exit;
-```
-
-编辑 `TeachingAssistant/settings.py`：
-
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'teaching_assistant_db',
-        'USER': 'your_username',
-        'PASSWORD': 'your_password',
-        'HOST': 'localhost',
-        'PORT': '3306',
-    }
-}
-```
+- **本地开发**：可在项目根目录配置 `.env`（与 `backend` 同级），或直接改 `TeachingAssistant/settings.py`。使用 MySQL 时需先创建数据库并配置 `DB_NAME`、`DB_USER`、`DB_PASSWORD` 等。
+- **生产 / PythonAnywhere**：通过环境变量控制；使用 SQLite 时设置 `USE_SQLITE=True`，无需 MySQL。详见 [docs/deployment.md](../docs/deployment.md) 与 [docs/deploy-pythonanywhere.md](../docs/deploy-pythonanywhere.md)。
 
 ### 3. 执行迁移
 
@@ -228,14 +225,13 @@ python manage.py runserver
 
 > 说明：本文件仅给出模块级概览，**详细接口列表与字段说明以 `docs/api.md` 为唯一权威来源**。
 
-- 认证与用户：`/api/auth/`
-- 学生端：`/api/student/`
-- 教师端：`/api/faculty/`
-- 助教端：`/api/ta/`
-- 通知模块：`/api/notifications/`
-- 管理端统计与报表：`/api/admin/`
+- 认证与用户：`/api/auth/`（登录支持用户名或邮箱）
+- 岗位/申请/工时：学生端、教师端、助教端路由见主路由挂载
+- 通知：`/api/notifications/`
+- 师生聊天：`/api/chat/`（会话、消息、发起会话等）
+- 管理端：`/api/admin/`（报表导出、趋势分析等）
 
-如需查看完整接口定义（包含请求/响应字段、示例），请参见：`docs/api.md`。
+完整路径、请求/响应字段与示例以 **docs/api.md** 为准。
 
 ---
 
@@ -255,14 +251,9 @@ http://localhost:8000/admin/           # Django Admin管理后台
 ```
 
 #### RESTful API (`/api/admin/`)
-```
-GET    /api/admin/users/                # 用户列表
-POST   /api/admin/users/                # 创建用户
-PUT    /api/admin/users/{id}/           # 编辑用户
-DELETE /api/admin/users/{id}/           # 删除用户
-GET    /api/admin/dashboard/            # 全局数据看板
-GET    /api/admin/reports/monthly/      # 月度报表
-```
+- 报表导出：`GET /api/admin/reports/export/`（月度 CSV）
+- 趋势分析：`GET /api/admin/reports/trends/?metric=...&group_by=...`
+- 其他管理端接口见 [docs/api.md](../docs/api.md)
 
 ### 通知 (`/api/notifications/`)
 
@@ -310,12 +301,12 @@ class PositionListCreateView(generics.ListCreateAPIView):
 
 #### User（核心用户表）
 ```python
-# accounts/models.py
+# accounts/models.py（示意）
 class User(AbstractBaseUser, PermissionsMixin):
-    user_id = models.CharField(max_length=20, unique=True)  # 通用ID
+    user_id = models.CharField(max_length=20, unique=True)
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(unique=True)
-    full_name = models.CharField(max_length=100)
+    real_name = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -409,7 +400,7 @@ class Notification(models.Model):
     # ...
 ```
 
-详细设计请参考：[DATABASE_DESIGN.md](../DATABASE_DESIGN.md)
+详细表结构概览与维护说明见：[docs/database.md](../docs/database.md)。
 
 ---
 
@@ -451,30 +442,10 @@ python manage.py create_test_data
 
 ## 🧪 测试
 
-### 运行测试
-
-```bash
-# 运行所有测试
-python manage.py test
-
-# 运行特定应用的测试
-python manage.py test accounts
-
-# 运行特定测试类
-python manage.py test accounts.tests.UserModelTest
-```
-
-### 使用Postman测试API
-
-```bash
-# 1. 登录获取token
-POST http://localhost:8000/api/auth/login/
-Body: {"username":"admin","password":"password"}
-
-# 2. 使用token访问API
-GET http://localhost:8000/api/student/positions/
-Headers: Authorization: Bearer <your_token>
-```
+- **单元测试**：各 app 下 `tests.py` 为预留；当前未强制要求编写 TestCase，见上文「自定义管理命令」中的说明。
+- **接口冒烟**：根目录 `python scripts/api_smoke_test.py`（需先启动后端）；安全冒烟：`python manage.py security_smoke_test`。
+- **测试方案与用例**：[docs/testing-plan.md](../docs/testing-plan.md)。
+- **手工/Postman**：登录 `POST /api/auth/login/` 取 Token，请求头 `Authorization: Bearer <token>` 访问需认证接口。
 
 ---
 
@@ -525,11 +496,11 @@ CORS_ALLOWED_ORIGINS = [
 
 ## 📚 相关文档
 
-- [项目主文档](../README.md)
-- [数据库设计文档](../DATABASE_DESIGN.md) ✅
-- [系统设计文档](../Design.md) ✅
-- [开发任务清单](../TODO.md) ✅
-- [项目结构说明](../PROJECT_STRUCTURE.md)
+- [项目主文档](../README.md) | [开发任务清单](../TODO.md) | [系统设计](../Design.md)
+- **API**：[docs/api.md](../docs/api.md)（权威）  
+- **数据库**：[docs/database.md](../docs/database.md)  
+- **部署**：[docs/deployment.md](../docs/deployment.md) | [deploy-pythonanywhere.md](../docs/deploy-pythonanywhere.md)  
+- **开发与测试**：[docs/developer-guide.md](../docs/developer-guide.md) | [docs/testing-plan.md](../docs/testing-plan.md)
 
 ---
 
@@ -549,7 +520,7 @@ CORS_ALLOWED_ORIGINS = [
 
 ---
 
-**最后更新**: 2025-10-16
+**最后更新**: 2026-03
 
 ---
 
@@ -600,131 +571,10 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 
 ---
 
-## 🎉 第三阶段完成总结
+## 📝 完成摘要
 
-### ✅ 已实现功能
-
-#### 1. JWT认证系统
-- ✅ 配置SIMPLE_JWT，支持user_id作为主键
-- ✅ Access Token有效期2小时，Refresh Token有效期7天
-- ✅ Token刷新机制和黑名单功能
-- ✅ 自定义Token序列化器，嵌入用户角色和权限
-
-#### 2. 用户认证API（12个接口）
-- ✅ **注册接口**：支持学生/教师/管理员注册，自动创建扩展信息
-- ✅ **登录接口**：返回JWT Token + 用户完整信息 + 角色 + 权限列表
-- ✅ **登出接口**：Token黑名单机制，确保安全登出
-- ✅ **用户信息接口**：获取和更新当前用户资料
-- ✅ **修改密码接口**：旧密码验证 + 新密码强度检查
-- ✅ **用户列表接口**：支持搜索、筛选、分页
-- ✅ **辅助接口**：检查用户名和邮箱可用性
-
-#### 3. RBAC权限控制（9个权限类）
-- ✅ **IsStudent** - 学生权限
-- ✅ **IsTA** - 助教权限（检查Student.is_ta字段）
-- ✅ **IsFaculty** - 教师权限
-- ✅ **IsAdministrator** - 管理员权限
-- ✅ **IsStudentOrTA** - 学生或助教
-- ✅ **IsFacultyOrAdmin** - 教师或管理员
-- ✅ **IsOwner** - 对象所有者
-- ✅ **IsOwnerOrReadOnly** - 所有者可写，他人只读
-- ✅ **HasPermission** - 基于RBAC的动态权限检查
-
-#### 4. 序列化器系统（10个）
-- ✅ **UserSerializer** - 用户完整信息（含角色、权限、扩展信息）
-- ✅ **UserSimpleSerializer** - 用户简化信息（列表展示）
-- ✅ **RegisterSerializer** - 注册序列化器（支持三种角色）
-- ✅ **LoginSerializer** - 登录序列化器
-- ✅ **ChangePasswordSerializer** - 修改密码序列化器
-- ✅ **RoleSerializer** - 角色序列化器
-- ✅ **PermissionSerializer** - 权限序列化器
-- ✅ **StudentSerializer** - 学生信息序列化器
-- ✅ **FacultySerializer** - 教师信息序列化器
-- ✅ **AdministratorSerializer** - 管理员信息序列化器
-
-### 🔧 技术突破
-
-1. **CharField主键问题解决**
-   - 修改UserManager的create_user方法
-   - 支持user_id在创建时传入，避免主键为空错误
-   - 实现：`user = self.model(user_id=user_id, username=username, ...)`
-
-2. **密码安全标准**
-   - 使用PBKDF2-SHA256哈希算法
-   - 60万次迭代，符合OWASP标准
-   - 每个密码使用唯一随机盐值
-   - 单向加密，不可逆向解密
-
-3. **JWT无状态认证**
-   - 支持分布式部署和水平扩展
-   - Token中嵌入用户信息，减少数据库查询
-   - 黑名单机制确保登出安全
-
-4. **RBAC动态权限**
-   - 通过数据库查询实现权限检查
-   - 支持多角色和权限继承
-   - 灵活的权限分配和回收
-
-### 📊 代码统计
-
-| 文件                    | 行数      | 说明                         |
-| ----------------------- | --------- | ---------------------------- |
-| accounts/views.py       | 324       | 12个API视图                  |
-| accounts/serializers.py | 430       | 10个序列化器                 |
-| accounts/permissions.py | 200       | 9个权限类                    |
-| accounts/urls.py        | 58        | 12个路由                     |
-| accounts/models.py      | 561       | 8个模型（含UserManager优化） |
-| **总计**                | **1,573** | **第三阶段新增/修改代码**    |
-
-### 🎯 下一步计划
-
-继续 **第四阶段：核心业务API开发**
-- 实现岗位管理（recruitment/views.py）
-- 实现申请流程（application/views.py）
-- 实现工时管理（timesheet/views.py）
-- 实现通知系统（notifications/views.py）
-
----
-
-## 📝 管理后台优化总结 (2025-10-16)
-
-### ✅ 已完成的优化
-
-#### 1. Django Admin首页自定义
-**文件**: `backend/templates/admin/index.html`
-- ✅ 5个统计卡片：用户总数、岗位总数、申请总数、待审核申请、本月薪酬
-- ✅ 优化布局：Grid网格布局，响应式设计
-- ✅ 修复嵌套标签问题：移除多余的stat-icon嵌套
-- ✅ 配色方案：蓝色（用户）、绿色（岗位）、橙色（申请）、红色（待审核）、紫色（薪酬）
-- ✅ 快捷操作按钮：创建用户、创建岗位、审核申请
-- ✅ 按钮样式优化：字体加粗、增大字号、阴影效果、悬停动画
-
-#### 2. 自定义Admin站点
-**文件**: `backend/dashboard/admin_views.py`
-- ✅ 创建CustomAdminSite类，重写index方法
-- ✅ 实时统计数据注入context
-- ✅ 统计逻辑：
-  - 用户总数（User.objects.count()）
-  - 岗位总数（Position.objects.count()）
-  - 申请总数（Application.objects.count()）
-  - 待审核申请（status='pending'）
-  - 本月薪酬（当月Salary汇总）
-
-#### 3. UI/UX优化
-- ✅ 统计卡片：悬停效果（上移+阴影加深）
-- ✅ 快捷按钮：增强文字可见度（font-weight: 600, font-size: 15px）
-- ✅ 布局间距：卡片间距20px，按钮间距15px
-- ✅ 响应式设计：自动适应不同屏幕尺寸
-
-
-**优化前**：
-- ❌ 统计卡片布局混乱（嵌套标签错误）
-- ❌ 按钮文字不清晰（字体小、无阴影）
-- ❌ 缺少视觉反馈（无悬停效果）
-
-**优化后**：
-- ✅ 清晰的网格布局（响应式）
-- ✅ 醒目的按钮文字（加粗、增大、阴影）
-- ✅ 流畅的交互体验（悬停动画）
-- ✅ 实时数据统计（自动更新）
+- **认证**：JWT（user_id 主键、Token 黑名单）、注册/登录/登出（支持用户名或邮箱）、RBAC 权限类与序列化器。
+- **业务**：岗位、申请、工时、薪酬、通知、师生聊天（Conversation/Message）及对应 API。
+- **管理端**：Admin 统计看板、趋势分析页（图表+表格）、月度报表导出、薪酬表单联动（salary_admin.js）；登出后跳转前端登录页（logout_cleanup.html）。
+- 接口与字段以 **docs/api.md** 为准；数据库与部署见 **docs/database.md**、**docs/deployment.md**。
 
