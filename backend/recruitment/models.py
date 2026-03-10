@@ -127,7 +127,8 @@ class Position(models.Model):
             else:
                 # 2) 到期：申请截止时间已过或岗位结束日期已过，自动关闭
                 now = timezone.now()
-                today = timezone.localdate()
+                # 兼容 USE_TZ=False（timezone.localdate 会对 naive datetime 抛错）
+                today = now.date()
                 if self.application_deadline and self.application_deadline < now:
                     self.status = 'closed'
                 elif self.end_date and self.end_date < today:
@@ -144,7 +145,8 @@ class Position(models.Model):
         - 历史遗留 filled → closed（统一口径）
         """
         now = timezone.now()
-        today = timezone.localdate()
+        # 兼容 USE_TZ=False（timezone.localdate 会对 naive datetime 抛错）
+        today = now.date()
 
         # 截止时间已过
         cls.objects.filter(status='open', application_deadline__lt=now).update(status='closed')
