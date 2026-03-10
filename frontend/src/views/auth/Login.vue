@@ -1,5 +1,9 @@
 <template>
-  <div class="login-container">
+  <div
+    class="login-container"
+    @mousemove="handleBgMouseMove"
+    :style="loginBgStyle"
+  >
     <div class="login-box">
       <!-- Logo和标题 -->
       <div class="login-header">
@@ -66,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
@@ -82,6 +86,13 @@ const loginFormRef = ref(null)
 
 // 加载状态
 const loading = ref(false)
+
+// 背景视差偏移（百分比坐标，50% 表示居中）
+const loginBgOffset = ref({ x: 50, y: 50 })
+
+const loginBgStyle = computed(() => ({
+  backgroundPosition: `${loginBgOffset.value.x}% ${loginBgOffset.value.y}%`,
+}))
 
 // 登录表单数据
 const loginForm = reactive({
@@ -163,6 +174,23 @@ const handleLogin = async () => {
 }
 
 /**
+ * 背景视差效果
+ */
+const handleBgMouseMove = (event) => {
+  const target = event.currentTarget
+  if (!target) return
+  const rect = target.getBoundingClientRect()
+  const relX = (event.clientX - rect.left) / rect.width - 0.5 // -0.5 ~ 0.5
+  const relY = (event.clientY - rect.top) / rect.height - 0.5
+
+  const maxOffset = 6 // 最大偏移 6%，保证效果轻微不眩晕
+  loginBgOffset.value = {
+    x: 50 + relX * maxOffset,
+    y: 50 + relY * maxOffset,
+  }
+}
+
+/**
  * 跳转到注册页面
  */
 const goToRegister = () => {
@@ -207,9 +235,8 @@ onMounted(() => {
   min-height: 100vh;
   position: relative;
   padding: 20px;
-  
-  /* 背景图片 */
-  background-image: url('@/assets/styles/login-bg.png');
+  /* 科技蓝渐变 + 静态背景图（由 Django /static 提供） */
+  background-image:url('@/assets/styles/background.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -224,7 +251,6 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(102, 126, 234, 0.3);
   z-index: 0;
 }
 

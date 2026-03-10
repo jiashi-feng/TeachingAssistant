@@ -1,5 +1,9 @@
 <template>
-  <div class="register-container">
+  <div
+    class="register-container"
+    @mousemove="handleBgMouseMove"
+    :style="registerBgStyle"
+  >
     <div class="register-box">
       <!-- Logo和标题 -->
       <div class="register-header">
@@ -408,6 +412,13 @@ const registerForm = reactive({
   phone: '',
 })
 
+// 背景视差偏移（百分比坐标，50% 表示居中）
+const registerBgOffset = ref({ x: 50, y: 50 })
+
+const registerBgStyle = computed(() => ({
+  backgroundPosition: `${registerBgOffset.value.x}% ${registerBgOffset.value.y}%`,
+}))
+
 // 学生端：院系-专业联动选项（论文/毕设口径）
 const studentDeptMajorMap = {
   '信息工程学院': ['计算机科学与技术', '电子信息', '物联网'],
@@ -771,6 +782,23 @@ const handleRegister = async () => {
 const goToLogin = () => {
   router.push('/login')
 }
+
+/**
+ * 背景视差效果
+ */
+const handleBgMouseMove = (event) => {
+  const target = event.currentTarget
+  if (!target) return
+  const rect = target.getBoundingClientRect()
+  const relX = (event.clientX - rect.left) / rect.width - 0.5 // -0.5 ~ 0.5
+  const relY = (event.clientY - rect.top) / rect.height - 0.5
+
+  const maxOffset = 6 // 最大偏移 6%，与登录页保持一致
+  registerBgOffset.value = {
+    x: 50 + relX * maxOffset,
+    y: 50 + relY * maxOffset,
+  }
+}
 </script>
 
 <style scoped>
@@ -782,8 +810,8 @@ const goToLogin = () => {
   position: relative;
   padding: 40px 20px;
   
-  /* 背景图片 */
-  background-image: url('@/assets/styles/login-bg.png');
+  /* 科技蓝渐变 + 静态背景图（由 Django /static 提供） */
+  background-image:url('@/assets/styles/background.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -798,7 +826,6 @@ const goToLogin = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(102, 126, 234, 0.3);
   z-index: 0;
 }
 
