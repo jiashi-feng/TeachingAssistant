@@ -191,19 +191,42 @@
           </el-form-item>
 
           <el-form-item label="院系" prop="department">
-            <el-input
+            <el-select
               v-model="registerForm.department"
-              placeholder="如：计算机学院"
+              placeholder="请选择院系"
+              style="width: 100%"
+              filterable
               clearable
-            />
+              @change="onStudentDepartmentChange"
+            >
+              <el-option
+                v-for="dept in studentDepartmentOptions"
+                :key="dept"
+                :label="dept"
+                :value="dept"
+              />
+            </el-select>
           </el-form-item>
 
           <el-form-item label="专业" prop="major">
-            <el-input
+            <el-select
               v-model="registerForm.major"
-              placeholder="如：计算机科学与技术"
+              placeholder="请选择专业"
+              style="width: 100%"
+              filterable
               clearable
-            />
+              :disabled="!registerForm.department"
+            >
+              <el-option
+                v-for="m in studentMajorOptions"
+                :key="m"
+                :label="m"
+                :value="m"
+              />
+            </el-select>
+            <span class="form-tip" v-if="!registerForm.department">
+              请先选择院系
+            </span>
           </el-form-item>
 
           <el-form-item label="年级" prop="grade">
@@ -254,11 +277,20 @@
           </el-form-item>
 
           <el-form-item label="院系" prop="department">
-            <el-input
+            <el-select
               v-model="registerForm.department"
-              placeholder="如：计算机学院"
+              placeholder="请选择院系"
+              style="width: 100%"
+              filterable
               clearable
-            />
+            >
+              <el-option
+                v-for="dept in studentDepartmentOptions"
+                :key="dept"
+                :label="dept"
+                :value="dept"
+              />
+            </el-select>
           </el-form-item>
 
           <el-form-item label="办公室">
@@ -376,6 +408,30 @@ const registerForm = reactive({
   phone: '',
 })
 
+// 学生端：院系-专业联动选项（论文/毕设口径）
+const studentDeptMajorMap = {
+  '信息工程学院': ['计算机科学与技术', '电子信息', '物联网'],
+  '机电工程学院': ['工业设计', '建筑'],
+  '国际商学院': ['国际贸易', '金融工程', '市场营销'],
+  '人文学院': ['心理学', '汉语言教育'],
+  '国际设计学院': ['数媒艺术', '戏美'],
+  '数字技术学院': ['数媒技术'],
+}
+
+const studentDepartmentOptions = Object.keys(studentDeptMajorMap)
+const studentMajorOptions = computed(() => {
+  const dept = registerForm.department
+  return dept ? (studentDeptMajorMap[dept] || []) : []
+})
+
+const onStudentDepartmentChange = () => {
+  // 切换院系时重置专业，避免“院系-专业”不匹配
+  registerForm.major = ''
+  if (registerFormRef.value) {
+    registerFormRef.value.clearValidate(['department', 'major'])
+  }
+}
+
 // 密码强度计算
 const passwordStrength = computed(() => {
   const pwd = registerForm.password
@@ -486,10 +542,10 @@ const registerRules = computed(() => {
       { required: true, message: '请输入学号', trigger: 'blur' },
     ]
     baseRules.department = [
-      { required: true, message: '请输入院系', trigger: 'blur' },
+      { required: true, message: '请选择院系', trigger: 'change' },
     ]
     baseRules.major = [
-      { required: true, message: '请输入专业', trigger: 'blur' },
+      { required: true, message: '请选择专业', trigger: 'change' },
     ]
     baseRules.grade = [
       { required: true, message: '请选择年级', trigger: 'change' },
@@ -502,7 +558,7 @@ const registerRules = computed(() => {
       { required: true, message: '请选择职称', trigger: 'change' },
     ]
     baseRules.department = [
-      { required: true, message: '请输入院系', trigger: 'blur' },
+      { required: true, message: '请选择院系', trigger: 'change' },
     ]
   }
   
