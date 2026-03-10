@@ -21,6 +21,8 @@ class StudentPositionList(generics.ListAPIView):
 
     def get_queryset(self):
         from django.utils import timezone
+        # 统一刷新岗位状态，避免教师端/学生端显示不一致
+        Position.refresh_statuses()
         now = timezone.now()
         return Position.objects.filter(
             status='open',
@@ -49,6 +51,8 @@ class FacultyPositionListCreate(generics.ListCreateAPIView):
     ordering_fields = ['application_deadline', 'created_at']
 
     def get_queryset(self):
+        # 统一刷新岗位状态，避免过期岗位仍显示 open
+        Position.refresh_statuses()
         return Position.objects.filter(posted_by=self.request.user).select_related('posted_by')
 
     def get_serializer_class(self):
@@ -105,6 +109,7 @@ class StudentDashboard(APIView):
         
         user = request.user
         now = timezone.now()
+        Position.refresh_statuses()
         
         # 统计可申请岗位数（开放中的岗位且未过期，与列表页面保持一致）
         available_positions = Position.objects.filter(
@@ -166,6 +171,7 @@ class FacultyDashboard(APIView):
     def get(self, request):
         """获取教师看板统计数据"""
         user = request.user
+        Position.refresh_statuses()
         
         # 统计岗位数据
         positions = Position.objects.filter(posted_by=user)

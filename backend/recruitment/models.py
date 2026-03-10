@@ -6,6 +6,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.conf import settings
+from django.utils import timezone
 
 
 class Position(models.Model):
@@ -113,8 +114,41 @@ class Position(models.Model):
         return self.status == 'open'
     
     def save(self, *args, **kwargs):
-        """重写save方法，自动更新状态"""
-        # 如果已招满，自动更新状态为filled
-        if self.num_filled >= self.num_positions and self.status == 'open':
-            self.status = 'filled'
+        """
+        重写save方法，尽量保持状态与业务一致。
+
+        注意：岗位“到期”属于时间触发事件，单靠 save 无法自动发生；
+        需配合 `refresh_statuses()` 在查询/定时任务中批量刷新。
+        """
+        if self.status == 'open':
+            # 1) 招满：统一视为关闭（避免教师端仍显示 open）
+            if self.is_full():
+                self.status = 'closed'
+            else:
+                # 2) 到期：申请截止时间已过或岗位结束日期已过，自动关闭
+                now = timezone.now()
+                today = timezone.localdate()
+                if self.application_deadline and self.application_deadline < now:
+                    self.status = 'closed'
+                elif self.end_date and self.end_date < today:
+                    self.status = 'closed'
         super().save(*args, **kwargs)
+
+    @classmethod
+    def refresh_statuses(cls):
+        """
+        批量刷新岗位状态（无副作用查询前可调用）：
+        - 申请截止时间已过 → closed
+        - 结束日期已过 → closed
+        - 招满（num_filled >= num_positions）→ closed
+        - 历史遗留 filled → closed（统一口径）
+        """
+        now = timezone.now()
+        today = timezone.localdate()
+
+        # 截止时间已过
+        cls.objects.filter(status='open', application_deadline__lt=now).update(status='closed')
+        # 结束日期已过
+        cls.objects.filter(status='open', end_date__lt=today).update(status='closed')
+        # 招满（open 或历史 filled）
+        cls.objects.filter(status__in=['open', 'filled'], num_filled__gte=models.F('num_positions')).update(status='closed')
