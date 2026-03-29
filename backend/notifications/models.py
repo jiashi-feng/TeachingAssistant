@@ -16,6 +16,7 @@ class Notification(models.Model):
         ('application', '申请相关'),
         ('timesheet', '工时相关'),
         ('salary', '薪酬相关'),
+        ('chat', '师生聊天'),
     ]
     
     # 优先级选择
@@ -66,6 +67,9 @@ class Notification(models.Model):
         # 评价相关
         ('evaluation_received', '收到工作评价'),
         ('evaluation_reminder', '评价提醒'),
+
+        # 师生聊天
+        ('chat_new_message', '收到聊天消息'),
     ]
     
     notification_id = models.AutoField(

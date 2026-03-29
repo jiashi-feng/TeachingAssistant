@@ -53,11 +53,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import api from '@/api'
+
+/** 当前会话消息列表轮询间隔（毫秒），用于准实时拉取对方新消息 */
+const MESSAGE_POLL_MS = 5000
+/** 会话列表轮询间隔，用于更新预览与未读数 */
+const CONV_POLL_MS = 15000
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -71,8 +76,12 @@ const inputContent = ref('')
 const sending = ref(false)
 const messagesRef = ref(null)
 
-const loadConversations = async () => {
-  loadingConvs.value = true
+let messagePollTimer = null
+let convPollTimer = null
+let visibilityHandler = null
+
+const loadConversations = async (silent = false) => {
+  if (!silent) loadingConvs.value = true
   try {
     const data = await api.chat.getConversations()
     conversations.value = Array.isArray(data) ? data : (data.results || [])
@@ -83,15 +92,15 @@ const loadConversations = async () => {
       currentConvId.value = conversations.value[0].conversation_id
     }
   } catch (e) {
-    ElMessage.error('加载会话列表失败')
+    if (!silent) ElMessage.error('加载会话列表失败')
   } finally {
-    loadingConvs.value = false
+    if (!silent) loadingConvs.value = false
   }
 }
 
-const loadMessages = async () => {
+const loadMessages = async (silent = false) => {
   if (!currentConvId.value) return
-  loadingMsg.value = true
+  if (!silent) loadingMsg.value = true
   try {
     const data = await api.chat.getMessages(currentConvId.value)
     messages.value = Array.isArray(data) ? data : (data.results || [])
@@ -99,9 +108,9 @@ const loadMessages = async () => {
       if (messagesRef.value) messagesRef.value.scrollTop = messagesRef.value.scrollHeight
     })
   } catch (e) {
-    ElMessage.error('加载消息失败')
+    if (!silent) ElMessage.error('加载消息失败')
   } finally {
-    loadingMsg.value = false
+    if (!silent) loadingMsg.value = false
   }
 }
 
@@ -109,7 +118,6 @@ const nextTick = (fn) => setTimeout(fn, 0)
 
 const selectConversation = (c) => {
   currentConvId.value = c.conversation_id
-  loadMessages()
 }
 
 const send = async () => {
@@ -120,7 +128,7 @@ const send = async () => {
     const msg = await api.chat.sendMessage(currentConvId.value, content)
     messages.value.push(msg)
     inputContent.value = ''
-    loadConversations()
+    loadConversations(true)
     nextTick(() => {
       if (messagesRef.value) messagesRef.value.scrollTop = messagesRef.value.scrollHeight
     })
@@ -137,12 +145,48 @@ const formatTime = (str) => {
   return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+const clearPollTimers = () => {
+  if (messagePollTimer) {
+    clearInterval(messagePollTimer)
+    messagePollTimer = null
+  }
+  if (convPollTimer) {
+    clearInterval(convPollTimer)
+    convPollTimer = null
+  }
+}
+
+const startPollTimers = () => {
+  clearPollTimers()
+  messagePollTimer = setInterval(() => {
+    if (document.visibilityState !== 'visible' || !currentConvId.value) return
+    loadMessages(true)
+  }, MESSAGE_POLL_MS)
+  convPollTimer = setInterval(() => {
+    if (document.visibilityState !== 'visible') return
+    loadConversations(true)
+  }, CONV_POLL_MS)
+}
+
 watch(currentConvId, () => loadMessages())
 
-onMounted(() => {
-  loadConversations()
-  const qid = route.query.conversation_id
-  if (qid) currentConvId.value = Number(qid)
+onMounted(async () => {
+  await loadConversations()
+  startPollTimers()
+  visibilityHandler = () => {
+    if (document.visibilityState === 'visible' && currentConvId.value) {
+      loadMessages(true)
+      loadConversations(true)
+    }
+  }
+  document.addEventListener('visibilitychange', visibilityHandler)
+})
+
+onUnmounted(() => {
+  clearPollTimers()
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler)
+  }
 })
 </script>
 

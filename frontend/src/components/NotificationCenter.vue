@@ -42,6 +42,7 @@
           <el-tab-pane label="申请" name="application" />
           <el-tab-pane label="工时" name="timesheet" />
           <el-tab-pane label="薪酬" name="salary" />
+          <el-tab-pane label="聊天" name="chat" />
         </el-tabs>
 
         <div class="notification-list" v-loading="loading">
